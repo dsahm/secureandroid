@@ -159,27 +159,22 @@ public class MACCrypto extends CryptoIOHelper {
         final LinkedList<String> algorithms = super.providerCheck();
         if (algorithms.contains("PBKDF2WithHmacSHA512")) {
             PBE_ALGORITHM = "PBKDF2WithHmacSHA512";
-        }else
-
-        if (algorithms.contains("PBKDF2WithHmacSHA1")) {
+        } else if (algorithms.contains("PBKDF2WithHmacSHA1")) {
             PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
         } else {
-            PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
-            //throw new NoAlgorithmAvailableException(NO_ALG_MSG);
+            //PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
+            throw new NoAlgorithmAvailableException(NO_ALG_MSG);
         }
 
         if (algorithms.contains("HmacSHA256")) {
             MAC_ALGORITHM = "HmacSHA256";
         } else if (algorithms.contains("HMACSHA256")) {
             MAC_ALGORITHM = "HMACSHA256";
-        }
-        else
-        if (algorithms.contains("HmacSHA1")) {
-         MAC_ALGORITHM = "HmacSHA1";
-         } else if (algorithms.contains("HMACSHA1")) {
-         MAC_ALGORITHM = "HMACSHA1";
-         }
-        else {
+        } else if (algorithms.contains("HmacSHA1")) {
+            MAC_ALGORITHM = "HmacSHA1";
+        } else if (algorithms.contains("HMACSHA1")) {
+            MAC_ALGORITHM = "HMACSHA1";
+        } else {
             throw new NoAlgorithmAvailableException(NO_ALG_MSG);
         }
     }
