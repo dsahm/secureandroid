@@ -115,6 +115,16 @@ sc<span class="pl-k">.</span>encryptAndStore(<span class="pl-smi">SecureAndroid<
 <span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>retrieve(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
 
 <h3>
+<a id="encryptandstorewithpasswordretrievewithpassword" class="anchor" href="#encryptandstorewithpasswordretrievewithpassword" aria-hidden="true"><span class="octicon octicon-link"></span></a>encryptAndStoreWithPassword/retrieveWithPassword</h3>
+
+<p>The encryptAndStoreWithPassword and retrieveWithPassword methods provide the same functionality as the above methods only that you can provide your own password. See # encryptWithPassword.</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string with password and store it under the given alias in FILE mode</span>
+sc<span class="pl-k">.</span>encryptAndStoreWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray());
+<span class="pl-c">// Retrieve</span>
+<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>retrieveWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray()), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
+
+<h3>
 <a id="exceptions" class="anchor" href="#exceptions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exceptions</h3>
 
 <p>Note that SecureAndroid will throw some useful exceptions if something wrong, for example if the wrong password was provided or you want to retrieve data that does not exist. See the javadocs for details.</p>
