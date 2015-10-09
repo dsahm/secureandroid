@@ -1,25 +1,37 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="UTF-8">
-    <title>SecureAndroid by dsahm</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
-  </head>
-  <body>
-    <section class="page-header">
-      <h1 class="project-name">SecureAndroid</h1>
-      <h2 class="project-tagline">A small library for encrypting and storing data securely on Android devices.</h2>
-      <a href="https://github.com/dsahm/secureandroid" class="btn">View on GitHub</a>
-      <a href="https://github.com/dsahm/secureandroid/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/dsahm/secureandroid/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
+<html>
 
-    <section class="main-content">
-      <h3>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="SecureAndroid : A small library for encrypting and storing data securely on Android devices.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>SecureAndroid</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/dsahm/secureandroid">View on GitHub</a>
+
+          <h1 id="project_title">SecureAndroid</h1>
+          <h2 id="project_tagline">A small library for encrypting and storing data securely on Android devices.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/dsahm/secureandroid/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/dsahm/secureandroid/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>
 <a id="welcome-to-secureandroid" class="anchor" href="#welcome-to-secureandroid" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome to SecureAndroid</h3>
 
 <p>SecureAndroid is a small library that will help you to easily encrypt, decrypt and store data securely on Android devices.
@@ -71,28 +83,56 @@ SecureAndroid abstracts cryptographic implementation details and i/o-operations 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Initialize SecureAndroid object</span>
 <span class="pl-smi">SecureAndroid</span> sc <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">SecureAndroid</span>(<span class="pl-smi">MyActivity</span><span class="pl-k">.</span><span class="pl-v">this</span>);</pre></div>
 
-<p>Now all operations are done on the sc object. Lets start with simply encrypting and decrypting some data, for example a string:</p>
+<p>Now all operations are done on the sc object. </p>
+
+<h3>
+<a id="encryptdecrypt" class="anchor" href="#encryptdecrypt" aria-hidden="true"><span class="octicon octicon-link"></span></a>encrypt/decrypt</h3>
+
+<p>Lets start with simply encrypting and decrypting some data, for example a string:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string</span>
 <span class="pl-k">byte</span>[] ciphertext <span class="pl-k">=</span> sc<span class="pl-k">.</span>encrypt(<span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>));
 <span class="pl-c">// Decrypt the string</span>
 <span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>decrypt(ciphertext), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>));</pre></div>
 
-<p>All key handling and cryptographic operations are done transparently. When the encrypt and decrypt methods are called, SecureAndroid uses an auto-generated password that is device specific. That password is not stored on the device but can be read from it when someone else gets his hands on it. So, while the auto-password option is good if you simply want to add a layer of security to your app, if the data to be encrypted is very sensitive, you should provide a password yourself. For example, you could ask the user for a passphrase and then use SecureAndroid like this:</p>
+<p>All key handling and cryptographic operations are done transparently. When the encrypt and decrypt methods are called, SecureAndroid uses an auto-generated password that is device specific. That password is not stored on the device but can be read from it when someone else gets his hands on it. </p>
+
+<h3>
+<a id="encryptwithpassworddecryptwithpassword" class="anchor" href="#encryptwithpassworddecryptwithpassword" aria-hidden="true"><span class="octicon octicon-link"></span></a>encryptWithPassword/decryptWithPassword</h3>
+
+<p>So, while the auto-password option is good if you simply want to add a layer of security to your app, if the data to be encrypted is very sensitive, you should provide a password yourself. For example, you could ask the user for a passphrase and then use SecureAndroid like this:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string with a given password</span>
-<span class="pl-k">byte</span>[] ciphertext <span class="pl-k">=</span> sc<span class="pl-k">.</span>encryptWithPassword(<span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span>);
-<span class="pl-c">// Decrypt the string</span>
-<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>decryptWithPassword(ciphertext), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span>);</pre></div>
+<span class="pl-k">byte</span>[] ciphertext <span class="pl-k">=</span> sc<span class="pl-k">.</span>encryptWithPassword(<span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray());
+<span class="pl-c">// Decrypt the string with the password</span>
+<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>decryptWithPassword(ciphertext, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray()), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
 
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/dsahm/secureandroid">SecureAndroid</a> is maintained by <a href="https://github.com/dsahm">dsahm</a>.</span>
+<h3>
+<a id="encryptandstoreretrieve" class="anchor" href="#encryptandstoreretrieve" aria-hidden="true"><span class="octicon octicon-link"></span></a>encryptAndStore/retrieve</h3>
 
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+<p>SecureAndroid does not only provide you with methods to simply encrypt and decrypt binary data that you can then handle yourself but also with methods to encrypt and directly store data. This abstracts i/o-operations. You simply have to remember the alias under which you want the data to be stored. Again, with the encryptAndStore/retrieve methods an auto-generated password is used.</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string and store it under the given alias</span>
+sc<span class="pl-k">.</span>encryptAndStore(<span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>));
+<span class="pl-c">// Retrieve the string</span>
+<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>retrieve(<span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>)), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
+
+<h3>
+<a id="exceptions" class="anchor" href="#exceptions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exceptions</h3>
+
+<p>Note that SecureAndroid will throw some useful exceptions if something wrong, for example if the wrong password was provided or you want to retrieve data that does not exist. See the javadocs for details.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">SecureAndroid maintained by <a href="https://github.com/dsahm">dsahm</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
       </footer>
+    </div>
 
-    </section>
+    
 
-  
   </body>
 </html>
