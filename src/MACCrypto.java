@@ -40,6 +40,7 @@ public class MACCrypto extends CryptoIOHelper {
     /**
      * Constructor for MACCrypto Class. Sets the context of the superclass.
      * @param context The context.
+     * @throws my.secureandroid.CryptoIOHelper.NoAlgorithmAvailableException
      */
     public MACCrypto(Context context) throws NoAlgorithmAvailableException {
         // Call superclass
@@ -54,7 +55,8 @@ public class MACCrypto extends CryptoIOHelper {
 
     /**
      * Generates and returns a 256-Bit long Mac-Key.
-     * @return              the generated Mac-Key
+     * @return              The generated Mac-Key
+     * @throws              NoSuchAlgorithmException
      */
     public SecretKey generateMacKey() throws NoSuchAlgorithmException{
 //        byte[] macBytes = super.generateRandomBytes(MAC_KEY_LENGTH_IN_BYTE);
@@ -153,7 +155,7 @@ public class MACCrypto extends CryptoIOHelper {
 
     /**
      * Checks whether a suitable algorithm for PBKD is available.
-     * @throws my.secureandroid.CryptoIOHelper.NoAlgorithmAvailableException
+     * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
     private void providerCheckMacCrypto() throws NoAlgorithmAvailableException {
         final LinkedList<String> algorithms = super.providerCheck();
@@ -229,7 +231,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @param spAlias     the alias for the SharedPref
      * @param keyAlias    the alias under which the key is stored in SharePref
      * @return            the MAC-Key
-     * @throws my.secureandroid.CryptoIOHelper.DataNotAvailableException
+     * @throws CryptoIOHelper.DataNotAvailableException
      */
     public SecretKey getMACKeyFromSharedPref(String spAlias, String keyAlias) throws DataNotAvailableException {
         byte[] temp = super.loadFromSharedPrefBase64(spAlias, keyAlias);

@@ -1,10 +1,8 @@
 package my.secureandroid;
 
 import android.content.Context;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -34,10 +32,6 @@ public class SecureAndroid {
     private static final int MAC_KEY_LENGTH = 128;
     private static final int IV_LENGTH_BYTE = 16;
     private static final int MAC_LENGTH_BYTE = 20;
-//    private static final int MASTER_SALT_LENGTH_BYTE = 64;
-//    private static final int IMEDIATE_MAC_LENGTH_BYTE = 20;
-//    private static final int IMEDIATE_CIPHER_LENGTH_BYTE = 32;
-//    private static final int PASSWORD_LENGTH_BYTE = 32;
     private static final int MACPLUSIV_LENGTH_BYTE = IV_LENGTH_BYTE+MAC_LENGTH_BYTE;
     public static final int SHARED_PREFERENCES = 0;
     public static final int FILE = 1;
@@ -69,7 +63,9 @@ public class SecureAndroid {
      * Encrypts the given byte [] plaintext and returns the ciphertext as byte [].
      * @param plaintext The plaintext as byte array.
      * @return          The ciphertext as byte array.
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.DataNotAvailableException
      * @throws CryptoIOHelper.WrongPasswordException
      */
     public byte[] encrypt(byte[] plaintext) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
@@ -83,9 +79,10 @@ public class SecureAndroid {
      * @throws GeneralSecurityException
      * @throws CryptoIOHelper.WrongPasswordException
      * @throws CryptoIOHelper.DataNotAvailableException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     public byte[] decrypt(byte[] ciphertext) throws GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException,
-            CryptoIOHelper.IntegrityCheckFailedException{
+            CryptoIOHelper.IntegrityCheckFailedException {
         return this.decrypt(ciphertext, getAutoPassword().toCharArray());
     }
 
@@ -96,7 +93,9 @@ public class SecureAndroid {
      * @param password  The desired password that will be used to derive the encryption key.
      * @return          The ciphertext as byte array.
      * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.DataNotAvailableException
      */
     public byte[] encryptWithPassword(byte[] plaintext, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
         return this.encrypt(plaintext, password);
@@ -111,96 +110,11 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.DataNotAvailableException
      * @throws CryptoIOHelper.WrongPasswordException
      * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     public byte[] decryptWithPassword(byte[] ciphertext, char[] password) throws CryptoIOHelper.DataNotAvailableException, CryptoIOHelper.WrongPasswordException,
             GeneralSecurityException, CryptoIOHelper.IntegrityCheckFailedException {
         return this.decrypt(ciphertext, password);
-    }
-
-    /**
-     * Private method that handles the encryption process.
-     * @param plaintext     The plaintext as byte array.
-     * @param password      The password that will be used to derive the encryption key.
-     * @return              The ciphertext as byte array.
-     * @throws GeneralSecurityException
-     * @throws CryptoIOHelper.WrongPasswordException
-     */
-    private byte[] encrypt(byte[] plaintext, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
-        SecretKeys secretKeys;
-        try{
-            // Try to load formerly stored key data and use the data to encrypt plaintext
-            secretKeys = getKeyData(password);
-        }
-        catch (CryptoIOHelper.DataNotAvailableException e) {
-            // If no key data was stored, create and store key data und use the stored key data to encrypt plaintext
-            secretKeys = createAndStoreAndGetKeyData(password);
-        }
-        final AESCrypto.CipherIV cipherIv = aesCrypto.encryptAES(plaintext, secretKeys.getAesKey());
-        final byte[] mac = macKrypto.generateMac(cipherIv.getCipher(), secretKeys.getMacKey());
-        return concatenateIvAndCipherAndMac(cipherIv, mac);
-    }
-
-    /**
-     * Private method that handles the decryption process.
-     * @param ivAndCipherAndMac      The ciphertext including the iv and the mac.
-     * @param password         The password that will be used to derive the decryption key.
-     * @return                 The plaintext as byte array.
-     * @throws GeneralSecurityException
-     * @throws CryptoIOHelper.WrongPasswordException
-     * @throws CryptoIOHelper.DataNotAvailableException
-     */
-    private byte[] decrypt(byte[] ivAndCipherAndMac, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
-        // Decode the ciphertext
-        ivAndCipherAndMac = cryptoIOHelper.decodeBase64(ivAndCipherAndMac);
-        // Initialize the three byte arrays iv, mac and cipher
-        final byte[] iv = new byte[IV_LENGTH_BYTE];
-        final byte[] mac = new byte[MAC_LENGTH_BYTE];
-        final byte[] cipher = new byte[ivAndCipherAndMac.length - (iv.length+mac.length)];
-        // Copy the first 128 Bit of ivAndCipherAndMac into iv, these contain the iv
-        System.arraycopy(ivAndCipherAndMac, 0, iv, 0, IV_LENGTH_BYTE);
-        // Copy the first Bit 129-385 of ivAndCipherAndMac into mac, these contain the mac
-        System.arraycopy(ivAndCipherAndMac, IV_LENGTH_BYTE, mac, 0, MAC_LENGTH_BYTE);
-        // Copy the remaining Bits in cipher
-        System.arraycopy(ivAndCipherAndMac, MACPLUSIV_LENGTH_BYTE, cipher, 0, cipher.length);
-        // Get the keys for integrity checking and decryption
-        final SecretKeys secretKeys = getKeyData(password);
-        if (macKrypto.checkIntegrity(cipher, mac, secretKeys.getMacKey())) {
-            // if integrity check was successful, return the decrypted plaintext as byte array
-            return aesCrypto.decryptAES(cipher, iv, secretKeys.getAesKey());
-        } else {
-            throw new CryptoIOHelper.IntegrityCheckFailedException(INTEGRITY_CHECK_FAILED);
-        }
-    }
-
-    /**
-     * Method that returns the auto-generated password if it is needed for decrypting data on
-     * another device. The password is device-dependend. CAUTION: You must encrypt the password
-     * before you send it over any network AND/OR use strong traffic encryption+authentication.
-     * @return      The password.
-     */
-    public String getAutoPassword() {
-        return cryptoIOHelper.getUniquePsuedoID();
-    }
-
-    /**
-     * Private method that concatenates three byte arrays.
-     * @param cipherIv  The cipherIv object that holds the seperate ciphertext und iv arrays.
-     * @param mac       The message authentication code corresponding to the cipherIv object.
-     * @return          One byte array where the iv and the ciphertext are concatenated.
-     */
-    private byte[] concatenateIvAndCipherAndMac(AESCrypto.CipherIV cipherIv, byte[] mac) {
-        // Create necessary arrays
-        final byte[] iv = cipherIv.getIv();
-        final byte[] cipher = cipherIv.getCipher();
-        final byte[] ivAndCipherAndMac = new byte[iv.length + cipher.length + mac.length];
-        // Copy the iv into the first 128 Bit of the new array
-        System.arraycopy(iv, 0, ivAndCipherAndMac, 0, IV_LENGTH_BYTE);
-        // Copy the mac into the next 256 Bit of the new array
-        System.arraycopy(mac, 0, ivAndCipherAndMac, IV_LENGTH_BYTE, mac.length);
-        // Append the cipher at the end
-        System.arraycopy(cipher, 0, ivAndCipherAndMac, MACPLUSIV_LENGTH_BYTE, cipher.length);
-        // Return the array containing iv+mac+cipher
-        return cryptoIOHelper.encodeToBase64(ivAndCipherAndMac);
     }
 
     /**
@@ -212,7 +126,8 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.WrongModeException
      * @throws CryptoIOHelper.WrongPasswordException
      * @throws GeneralSecurityException
-     * @throws my.secureandroid.CryptoIOHelper.DataNotAvailableException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     public void encryptAndStore(int mode, byte[] plaintext, String alias) throws CryptoIOHelper.IntegrityCheckFailedException, IOException, CryptoIOHelper.WrongModeException, CryptoIOHelper.WrongPasswordException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
         SecretKeys secretKeys;
@@ -242,9 +157,11 @@ public class SecureAndroid {
      * @throws IOException
      * @throws CryptoIOHelper.WrongPasswordException
      * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     * @throws CryptoIOHelper.DataNotAvailableException
      */
     public void encryptAndStoreWithPassword(int mode, byte[] plaintext, String alias, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, CryptoIOHelper.WrongModeException, IOException, CryptoIOHelper.WrongPasswordException, GeneralSecurityException,
-            CryptoIOHelper.DataNotAvailableException{
+            CryptoIOHelper.DataNotAvailableException {
         SecretKeys secretKeys;
         try {
             // Try to load formerly stored key data and use the data to encrypt plaintext
@@ -326,11 +243,128 @@ public class SecureAndroid {
     }
 
     /**
+     * Deletes either the SharedPrefs alias entry or the file saved under the alias.
+     * @param mode      The mode, use SecureAndroid.SHARED_PREFERENCES or SecureAndroid.FILE.
+     * @param alias     The alias of the SharedPref entry or the filename.
+     * @throws CryptoIOHelper.WrongModeException
+     */
+    public void deleteData (int mode, String alias) throws CryptoIOHelper.WrongModeException {
+        if (mode == SHARED_PREFERENCES) {
+            aesCrypto.deleteCipherAndIVFromSharedPref(CIPHER_IV_ALIAS, alias);
+        } else if (mode == FILE) {
+            aesCrypto.deleteCipherAndIVFile(alias);
+        } else {
+            throw new CryptoIOHelper.WrongModeException(WRONG_MODE_EXCEPTION);
+        }
+    }
+
+    /**
+     * Wipes the intermediate key and thus destroys all formerly encrypted data in the sense
+     * of it being irrecoverable.
+     */
+    public void wipeKey()  {
+        // For production
+        cryptoIOHelper.deleteSharedPref(IMEDIATE_KEY_DATA);
+        cryptoIOHelper.deleteSharedPref(PASSWORD_ALIAS);
+    }
+
+    /**
+     * Private method that handles the encryption process.
+     * @param plaintext     The plaintext as byte array.
+     * @param password      The password that will be used to derive the encryption key.
+     * @return              The ciphertext as byte array.
+     * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     */
+    private byte[] encrypt(byte[] plaintext, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
+        SecretKeys secretKeys;
+        try{
+            // Try to load formerly stored key data and use the data to encrypt plaintext
+            secretKeys = getKeyData(password);
+        }
+        catch (CryptoIOHelper.DataNotAvailableException e) {
+            // If no key data was stored, create and store key data und use the stored key data to encrypt plaintext
+            secretKeys = createAndStoreAndGetKeyData(password);
+        }
+        final AESCrypto.CipherIV cipherIv = aesCrypto.encryptAES(plaintext, secretKeys.getAesKey());
+        final byte[] mac = macKrypto.generateMac(cipherIv.getCipher(), secretKeys.getMacKey());
+        return concatenateIvAndCipherAndMac(cipherIv, mac);
+    }
+
+    /**
+     * Private method that handles the decryption process.
+     * @param ivAndCipherAndMac      The ciphertext including the iv and the mac.
+     * @param password         The password that will be used to derive the decryption key.
+     * @return                 The plaintext as byte array.
+     * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     */
+    private byte[] decrypt(byte[] ivAndCipherAndMac, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
+        // Decode the ciphertext
+        ivAndCipherAndMac = cryptoIOHelper.decodeBase64(ivAndCipherAndMac);
+        // Initialize the three byte arrays iv, mac and cipher
+        final byte[] iv = new byte[IV_LENGTH_BYTE];
+        final byte[] mac = new byte[MAC_LENGTH_BYTE];
+        final byte[] cipher = new byte[ivAndCipherAndMac.length - (iv.length+mac.length)];
+        // Copy the first 128 Bit of ivAndCipherAndMac into iv, these contain the iv
+        System.arraycopy(ivAndCipherAndMac, 0, iv, 0, IV_LENGTH_BYTE);
+        // Copy the first Bit 129-385 of ivAndCipherAndMac into mac, these contain the mac
+        System.arraycopy(ivAndCipherAndMac, IV_LENGTH_BYTE, mac, 0, MAC_LENGTH_BYTE);
+        // Copy the remaining Bits in cipher
+        System.arraycopy(ivAndCipherAndMac, MACPLUSIV_LENGTH_BYTE, cipher, 0, cipher.length);
+        // Get the keys for integrity checking and decryption
+        final SecretKeys secretKeys = getKeyData(password);
+        if (macKrypto.checkIntegrity(cipher, mac, secretKeys.getMacKey())) {
+            // if integrity check was successful, return the decrypted plaintext as byte array
+            return aesCrypto.decryptAES(cipher, iv, secretKeys.getAesKey());
+        } else {
+            throw new CryptoIOHelper.IntegrityCheckFailedException(INTEGRITY_CHECK_FAILED);
+        }
+    }
+
+    /**
+     * Method that returns the auto-generated password if it is needed for decrypting data on
+     * another device. The password is device-dependend. CAUTION: You must encrypt the password
+     * before you send it over any network AND/OR use strong traffic encryption+authentication.
+     * @return      The password.
+     */
+    private String getAutoPassword() {
+        return cryptoIOHelper.getUniquePsuedoID();
+    }
+
+    /**
+     * Private method that concatenates three byte arrays.
+     * @param cipherIv  The cipherIv object that holds the seperate ciphertext und iv arrays.
+     * @param mac       The message authentication code corresponding to the cipherIv object.
+     * @return          One byte array where the iv and the ciphertext are concatenated.
+     */
+    private byte[] concatenateIvAndCipherAndMac(AESCrypto.CipherIV cipherIv, byte[] mac) {
+        // Create necessary arrays
+        final byte[] iv = cipherIv.getIv();
+        final byte[] cipher = cipherIv.getCipher();
+        final byte[] ivAndCipherAndMac = new byte[iv.length + cipher.length + mac.length];
+        // Copy the iv into the first 128 Bit of the new array
+        System.arraycopy(iv, 0, ivAndCipherAndMac, 0, IV_LENGTH_BYTE);
+        // Copy the mac into the next 256 Bit of the new array
+        System.arraycopy(mac, 0, ivAndCipherAndMac, IV_LENGTH_BYTE, mac.length);
+        // Append the cipher at the end
+        System.arraycopy(cipher, 0, ivAndCipherAndMac, MACPLUSIV_LENGTH_BYTE, cipher.length);
+        // Return the array containing iv+mac+cipher
+        return cryptoIOHelper.encodeToBase64(ivAndCipherAndMac);
+    }
+
+    /**
      * Private method that creates the AES master-key and store its salt value. Then the intermediate key
      * is generated and stored in the SharedPreferences. The key then is loaded and returned to the caller.
      * @param password      The password from which the master key will be derived.
      * @return              The AES intermediate key used for data encryption and decryption.
      * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.DataNotAvailableException 
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     private SecretKeys createAndStoreAndGetKeyData(char[] password) throws GeneralSecurityException, CryptoIOHelper.DataNotAvailableException, CryptoIOHelper.IntegrityCheckFailedException {
         // Hash the password with salt and get the hashed password and the salt
@@ -384,6 +418,7 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.DataNotAvailableException
      * @throws GeneralSecurityException
      * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     private SecretKeys getKeyData(char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, CryptoIOHelper.DataNotAvailableException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException {
         // Get the formerly hashed password and its salt value from Shared Preferences
@@ -464,35 +499,6 @@ public class SecureAndroid {
         } else {
             throw new CryptoIOHelper.WrongModeException(WRONG_MODE_EXCEPTION);
         }
-    }
-
-    /**
-     * Deletes either the SharedPrefs alias entry or the file saved under the alias.
-     * @param mode      The mode, use SecureAndroid.SHARED_PREFERENCES or SecureAndroid.FILE.
-     * @param alias     The alias of the SharedPref entry or the filename.
-     * @throws CryptoIOHelper.WrongModeException
-     */
-    public void deleteData (int mode, String alias) throws CryptoIOHelper.WrongModeException {
-        if (mode == SHARED_PREFERENCES) {
-            aesCrypto.deleteCipherAndIVFromSharedPref(CIPHER_IV_ALIAS, alias);
-        } else if (mode == FILE) {
-            aesCrypto.deleteCipherAndIVFile(alias);
-        } else {
-            throw new CryptoIOHelper.WrongModeException(WRONG_MODE_EXCEPTION);
-        }
-    }
-
-    /**
-     * Wipes the intermediate key and thus destroys all formerly encrypted data in the sense
-     * of it being irrecoverable.
-     */
-    public void wipeKey()  {
-        // For production
-        cryptoIOHelper.deleteSharedPref(IMEDIATE_KEY_DATA);
-        cryptoIOHelper.deleteSharedPref(PASSWORD_ALIAS);
-        // For testing:
-        // cryptoIOHelper.deleteSharedPref(KEY_DATA_ALIAS);
-
     }
 
     // Class to hold a mac and aes key.

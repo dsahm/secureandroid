@@ -151,7 +151,7 @@ public class CryptoIOHelper {
      * @param spAlias       the alias under which the SharePref was stored
      * @param dataAlias     the alias of the data itself
      * @return              the data as byte array
-     * @throws my.secureandroid.CryptoIOHelper.DataNotAvailableException
+     * @throws CryptoIOHelper.DataNotAvailableException
      */
     public byte[] loadFromSharedPrefBase64(String spAlias, String dataAlias) throws DataNotAvailableException {
             final SharedPreferences sharedPreferences = context.getSharedPreferences(spAlias, Context.MODE_PRIVATE);

@@ -35,6 +35,7 @@ public class AESCrypto extends my.secureandroid.CryptoIOHelper {
     /**
      * Constructor for AESCrypto Class. Sets the context of the superclass.
      * @param context   the context
+     * @throws NoAlgorithmAvailableException
      */
     public AESCrypto(Context context) throws NoAlgorithmAvailableException {
         // Call superclass
@@ -218,7 +219,7 @@ public class AESCrypto extends my.secureandroid.CryptoIOHelper {
      * @param spAlias     the alias for the SharedPref
      * @param ciphIVAlias the alias for the ciphertext and iv
      * @return            the CipherIV instance containing the desired cipher and iv
-     * @throws my.secureandroid.CryptoIOHelper.DataNotAvailableException
+     * @throws CryptoIOHelper.DataNotAvailableException
      */
     public CipherIV getCipherAndIVFromSharedPref(String spAlias, String ciphIVAlias) throws DataNotAvailableException {
         byte[] cipher = super.loadFromSharedPrefBase64(spAlias, ciphIVAlias + CIPHER_PART);
@@ -338,7 +339,7 @@ public class AESCrypto extends my.secureandroid.CryptoIOHelper {
      * @param spAlias       the alias of the Shared Preferences
      * @param keyAlias      the alias of the key
      * @return              the AES-Key
-     * @throws my.secureandroid.CryptoIOHelper.DataNotAvailableException
+     * @throws CryptoIOHelper.DataNotAvailableException
      */
     public SecretKey getAESKeyFromSharedPrefBase64(String spAlias, String keyAlias) throws CryptoIOHelper.DataNotAvailableException {
         byte[] temp = super.loadFromSharedPrefBase64(spAlias, keyAlias);

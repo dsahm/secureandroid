@@ -26,6 +26,7 @@ public class PasswordCrypto extends CryptoIOHelper {
     /**
      * Constructor for PasswordCrypto Class. Sets the context of the superclass.
      * @param context   The context.
+     * @throws NoAlgorithmAvailableException
      */
     public PasswordCrypto(Context context) throws NoAlgorithmAvailableException {
         // Call the superclass
@@ -127,7 +128,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param spAlias       the alias for the SharedPref
      * @param hashAlias     the alias under which the hash is stored in SharePref
      * @return              the hash
-     * @throws my.secureandroid.CryptoIOHelper.DataNotAvailableException
+     * @throws              CryptoIOHelper.DataNotAvailableException
      */
     public byte[] getHashFromSharedPref(String spAlias, String hashAlias) throws DataNotAvailableException {
         return super.loadFromSharedPrefBase64(spAlias, hashAlias);
@@ -158,7 +159,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param spAlias       The alias for the SharedPref.
      * @param saltAlias     The alias for the salt within the SharedPref.
      * @return              The salt as a byte array.
-     * @throws my.secureandroid.CryptoIOHelper.DataNotAvailableException
+     * @throws              CryptoIOHelper.DataNotAvailableException
      */
     public byte[] getSaltFromSharedPref(String spAlias, String saltAlias) throws DataNotAvailableException {
         return super.loadFromSharedPrefBase64(spAlias, saltAlias);
@@ -183,7 +184,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param passwordAlias     The alias for the hashed password.
      * @param saltAlias         The alias for the salt.
      * @return                  The HashedPasswordAndSalt object.
-     * @throws my.secureandroid.CryptoIOHelper.DataNotAvailableException
+     * @throws                  CryptoIOHelper.DataNotAvailableException
      */
     public HashedPasswordAndSalt getHashedPasswordAndSaltSharedPref(String spAlias, String passwordAlias, String saltAlias) throws DataNotAvailableException {
         return new HashedPasswordAndSalt(getHashFromSharedPref(spAlias, passwordAlias), getSaltFromSharedPref(spAlias, saltAlias));
@@ -206,7 +207,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return              The HashedPasswordAndSalt object.
      * @throws IOException
      */
-    public HashedPasswordAndSalt getHashedPasswordAndSaltFromFile(String filename) throws IOException{
+    public HashedPasswordAndSalt getHashedPasswordAndSaltFromFile(String filename) throws IOException {
         return new HashedPasswordAndSalt(getHashFromFile(filename + HASH_PART), getSaltFromFile(filename+SALT_PART));
     }
 
