@@ -40,6 +40,13 @@ SecureAndroid uses AES encryption in CBC mode with padding according to PKCS5. F
 SecureAndroid abstracts cryptographic implementation details and i/o-operations away so that you can concentrate on your app logic. </p>
 
 <h3>
+<a id="important-note" class="anchor" href="#important-note" aria-hidden="true"><span class="octicon octicon-link"></span></a>Important note</h3>
+
+<p>If you use ProGuard, you need to add the following rule:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">-</span>keep <span class="pl-k">class</span> <span class="pl-en">my</span>.secureandroid.PrngFixes$* { <span class="pl-k">*</span>; }</pre></div>
+
+<h3>
 <a id="how-to-add-secureandroid-to-a-project" class="anchor" href="#how-to-add-secureandroid-to-a-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to add SecureAndroid to a project</h3>
 
 <p>To use SecureAndroid, simply download the zip or tar.gz file and extract it. In your Android Studio project move to the java folder of your module:</p>
