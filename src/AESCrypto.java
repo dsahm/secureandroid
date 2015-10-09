@@ -14,7 +14,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-public class AESCrypto extends my.secureandroid.CryptoIOHelper {
+public class AESCrypto extends CryptoIOHelper {
 
     // Message if no suitable algorithm available
     private static final String NO_ALG_MSG = "No algorithm available on this platform";

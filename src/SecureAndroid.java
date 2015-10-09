@@ -188,7 +188,7 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.WrongPasswordException
      * @throws GeneralSecurityException
      * @throws CryptoIOHelper.DataNotAvailableException
-     * @throws my.secureandroid.CryptoIOHelper.IntegrityCheckFailedException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     public byte[] retrieve(int mode, String alias) throws CryptoIOHelper.IntegrityCheckFailedException, CryptoIOHelper.WrongModeException, IOException, CryptoIOHelper.WrongPasswordException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
         SecretKeys secretKeys;
@@ -222,7 +222,7 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.WrongPasswordException
      * @throws GeneralSecurityException
      * @throws CryptoIOHelper.DataNotAvailableException
-     * @throws my.secureandroid.CryptoIOHelper.IntegrityCheckFailedException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     public byte[] retrieveWithPassword(int mode, String alias, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, IOException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException, CryptoIOHelper.WrongModeException, GeneralSecurityException {
         SecretKeys secretKeys;

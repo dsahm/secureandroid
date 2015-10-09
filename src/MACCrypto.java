@@ -40,7 +40,7 @@ public class MACCrypto extends CryptoIOHelper {
     /**
      * Constructor for MACCrypto Class. Sets the context of the superclass.
      * @param context The context.
-     * @throws my.secureandroid.CryptoIOHelper.NoAlgorithmAvailableException
+     * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
     public MACCrypto(Context context) throws NoAlgorithmAvailableException {
         // Call superclass
