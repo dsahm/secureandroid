@@ -73,9 +73,17 @@ SecureAndroid abstracts cryptographic implementation details and i/o-operations 
 
 <p><img src="https://dl.dropboxusercontent.com/u/7603573/SecureAndroidUseStep6.png" alt=""></p>
 
-<p>That's it! Now you can initialize a SecureAndroid object in your activity like this:</p>
+<p>That's it! After importing</p>
 
-<p><img src="https://dl.dropboxusercontent.com/u/7603573/SecureAndroidUseStep7.png" alt=""></p>
+<div class="highlight highlight-source-java"><pre><span class="pl-k">import</span> <span class="pl-smi">my.secureandroid.SecureAndroid</span>;</pre></div>
+
+<p>you can initialize a SecureAndroid object in your activity like this:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">try</span> {
+    <span class="pl-smi">SecureAndroid</span> sc <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">SecureAndroid</span>(<span class="pl-smi">MyActivity</span><span class="pl-k">.</span><span class="pl-v">this</span>);
+} <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> e) {
+    <span class="pl-c">// Try it out to see the specific exceptions..and do smth</span>
+}</pre></div>
 
 <h3>
 <a id="the-api" class="anchor" href="#the-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>The API</h3>
