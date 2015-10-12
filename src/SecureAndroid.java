@@ -253,8 +253,9 @@ public class SecureAndroid {
      * @param mode      The mode, use SecureAndroid.SHARED_PREFERENCES or SecureAndroid.FILE.
      * @param alias     The alias of the SharedPref entry or the filename.
      * @throws CryptoIOHelper.WrongModeException
+     * @throws CryptoIOHelper.DataNotAvailableException
      */
-    public void deleteData (int mode, String alias) throws CryptoIOHelper.WrongModeException {
+    public void deleteData (int mode, String alias) throws CryptoIOHelper.WrongModeException, CryptoIOHelper.DataNotAvailableException {
         if (mode == SHARED_PREFERENCES) {
             aesCrypto.deleteCipherAndIVFromSharedPref(CIPHER_IV_ALIAS, alias);
         } else if (mode == FILE) {

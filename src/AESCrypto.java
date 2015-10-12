@@ -171,8 +171,10 @@ public class AESCrypto extends CryptoIOHelper {
     /**
      * Deletes the files saved under the given alias for a ciperIv object.
      * @param filename  The alias.
+     * @throws CryptoIOHelper.DataNotAvailableException
+     *
      */
-    public void deleteCipherAndIVFile(String filename) {
+    public void deleteCipherAndIVFile(String filename) throws DataNotAvailableException {
         super.deleteFile(filename + CIPHER_PART);
         super.deleteFile(filename + IV_PART);
     }

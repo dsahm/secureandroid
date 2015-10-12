@@ -73,11 +73,14 @@ public class CryptoIOHelper {
     /**
      * Deletes the specified file.
      * @param filename  The filename to be deleted.
+     * @throws CryptoIOHelper.DataNotAvailableException
      */
-    public void deleteFile(String filename) {
+    public void deleteFile  (String filename) throws DataNotAvailableException {
         String dir = context.getFilesDir().getAbsolutePath();
         File file = new File(dir, filename);
-        file.delete();
+        if (!file.delete()) {
+            throw new DataNotAvailableException(DATA_NOT_AVAILABLE);
+        }
     }
 
     /**
