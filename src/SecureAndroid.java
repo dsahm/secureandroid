@@ -3,6 +3,8 @@ package my.secureandroid;
 import android.content.Context;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.LinkedList;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -26,13 +28,14 @@ public class SecureAndroid {
     private static final String MAC_INTERMEDIATE_KEY_MAC_ALIAS = "SecureAndroid.Mac.Imediate.Mac.alias";
     private static final String PASSWORD_ALIAS = "SecureAndroid.Password.Alias";
     private static final String IMEDIATE_KEY_DATA = "SecureAndoird.Intermediate.Key.Data";
+    private static final String NO_ALG_MSG = "No suitable algorithm available on this platform";
     private static final String AES = "AES";
     private static final String MAC = "MAC";
     private static final int AES_KEY_LENGTH = 128;
     private static final int MAC_KEY_LENGTH = 128;
     private static final int IV_LENGTH_BYTE = 16;
-    private static final int MAC_LENGTH_BYTE = 20;
-    private static final int MACPLUSIV_LENGTH_BYTE = IV_LENGTH_BYTE+MAC_LENGTH_BYTE;
+    private static int MAC_LENGTH_BYTE;// = 20;
+    private static int MACPLUSIV_LENGTH_BYTE;// = IV_LENGTH_BYTE+MAC_LENGTH_BYTE;
     public static final int SHARED_PREFERENCES = 0;
     public static final int FILE = 1;
 
@@ -57,6 +60,9 @@ public class SecureAndroid {
         passwordCrypto = new PasswordCrypto(context);
         macKrypto = new MACCrypto(context);
         cryptoIOHelper = new CryptoIOHelper(context);
+        // Check and define the MAC length according to the availability of SHA256/1 on the platform
+        checkMacLength();
+        MACPLUSIV_LENGTH_BYTE = IV_LENGTH_BYTE+MAC_LENGTH_BYTE;
     }
 
     /**
@@ -305,17 +311,17 @@ public class SecureAndroid {
      */
     private byte[] decrypt(byte[] ivAndCipherAndMac, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
         // Decode the ciphertext
-        ivAndCipherAndMac = cryptoIOHelper.decodeBase64(ivAndCipherAndMac);
+        final byte[] ivAndCipherAndMacInner = cryptoIOHelper.decodeBase64(ivAndCipherAndMac);
         // Initialize the three byte arrays iv, mac and cipher
         final byte[] iv = new byte[IV_LENGTH_BYTE];
         final byte[] mac = new byte[MAC_LENGTH_BYTE];
-        final byte[] cipher = new byte[ivAndCipherAndMac.length - (iv.length+mac.length)];
+        final byte[] cipher = new byte[ivAndCipherAndMacInner.length - (IV_LENGTH_BYTE+MAC_LENGTH_BYTE)];
         // Copy the first 128 Bit of ivAndCipherAndMac into iv, these contain the iv
-        System.arraycopy(ivAndCipherAndMac, 0, iv, 0, IV_LENGTH_BYTE);
+        System.arraycopy(ivAndCipherAndMacInner, 0, iv, 0, IV_LENGTH_BYTE);
         // Copy the first Bit 129-385 of ivAndCipherAndMac into mac, these contain the mac
-        System.arraycopy(ivAndCipherAndMac, IV_LENGTH_BYTE, mac, 0, MAC_LENGTH_BYTE);
+        System.arraycopy(ivAndCipherAndMacInner, IV_LENGTH_BYTE, mac, 0, MAC_LENGTH_BYTE);
         // Copy the remaining Bits in cipher
-        System.arraycopy(ivAndCipherAndMac, MACPLUSIV_LENGTH_BYTE, cipher, 0, cipher.length);
+        System.arraycopy(ivAndCipherAndMacInner, MACPLUSIV_LENGTH_BYTE, cipher, 0, cipher.length);
         // Get the keys for integrity checking and decryption
         final SecretKeys secretKeys = getKeyData(password);
         if (macKrypto.checkIntegrity(cipher, mac, secretKeys.getMacKey())) {
@@ -346,11 +352,11 @@ public class SecureAndroid {
         // Create necessary arrays
         final byte[] iv = cipherIv.getIv();
         final byte[] cipher = cipherIv.getCipher();
-        final byte[] ivAndCipherAndMac = new byte[iv.length + cipher.length + mac.length];
+        final byte[] ivAndCipherAndMac = new byte[IV_LENGTH_BYTE + MAC_LENGTH_BYTE + cipher.length];
         // Copy the iv into the first 128 Bit of the new array
         System.arraycopy(iv, 0, ivAndCipherAndMac, 0, IV_LENGTH_BYTE);
         // Copy the mac into the next 256 Bit of the new array
-        System.arraycopy(mac, 0, ivAndCipherAndMac, IV_LENGTH_BYTE, mac.length);
+        System.arraycopy(mac, 0, ivAndCipherAndMac, IV_LENGTH_BYTE, MAC_LENGTH_BYTE);
         // Append the cipher at the end
         System.arraycopy(cipher, 0, ivAndCipherAndMac, MACPLUSIV_LENGTH_BYTE, cipher.length);
         // Return the array containing iv+mac+cipher
@@ -498,6 +504,33 @@ public class SecureAndroid {
             return aesCrypto.getCipherAndIVFromFile(alias);
         } else {
             throw new CryptoIOHelper.WrongModeException(WRONG_MODE_EXCEPTION);
+        }
+    }
+
+    /**
+     * Checks whether a suitable algorithm for PBKD is available.
+     * @throws CryptoIOHelper.NoAlgorithmAvailableException
+     */
+    private void checkMacLength() throws CryptoIOHelper.NoAlgorithmAvailableException {
+        final LinkedList<String> algorithms = cryptoIOHelper.providerCheck();
+//        if (algorithms.contains("PBKDF2WithHmacSHA512")) {
+//            PBE_ALGORITHM = "PBKDF2WithHmacSHA512";
+//        } else if (algorithms.contains("PBKDF2WithHmacSHA1")) {
+//            PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
+//        } else {
+//            //PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
+//            throw new CryptoIOHelper.NoAlgorithmAvailableException(NO_ALG_MSG);
+//        }
+        if (algorithms.contains("HmacSHA256")) {
+            MAC_LENGTH_BYTE = 32;
+        } else if (algorithms.contains("HMACSHA256")) {
+            MAC_LENGTH_BYTE = 32;
+        } else if (algorithms.contains("HmacSHA1")) {
+            MAC_LENGTH_BYTE = 20;
+        } else if (algorithms.contains("HMACSHA1")) {
+            MAC_LENGTH_BYTE = 20;
+        } else {
+            throw new CryptoIOHelper.NoAlgorithmAvailableException(NO_ALG_MSG);
         }
     }
 
