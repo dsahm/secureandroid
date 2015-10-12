@@ -90,13 +90,6 @@ SecureAndroid abstracts cryptographic implementation details and i/o-operations 
 
 <p>The SecureAndroid class is the only class you will have to use. If you want you can take a look into the other classes and build your own little library out of these...but for now let's simply focus on using the public methods of the SecureAndroid class. To get an overview, you can take a look at the <a href="https://dl.dropboxusercontent.com/u/7603573/site/javadocs/index.html">javadocs</a>. If you want to learn about the public API you should look at the documentation of the class <em>SecureAndroid</em>.</p>
 
-<p>To initialize a SecureAndroid object simply call its constructor and pass it the present context:</p>
-
-<div class="highlight highlight-source-java"><pre><span class="pl-c">// Initialize SecureAndroid object</span>
-<span class="pl-smi">SecureAndroid</span> sc <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">SecureAndroid</span>(<span class="pl-smi">MyActivity</span><span class="pl-k">.</span><span class="pl-v">this</span>);</pre></div>
-
-<p>Now all operations are done on the sc object. </p>
-
 <h3>
 <a id="encryptdecrypt" class="anchor" href="#encryptdecrypt" aria-hidden="true"><span class="octicon octicon-link"></span></a>encrypt/decrypt</h3>
 
