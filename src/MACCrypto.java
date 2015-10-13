@@ -24,33 +24,29 @@ public class MACCrypto extends CryptoIOHelper {
     private String MAC_ALGORITHM;
     private String PBE_ALGORITHM;
     // Key lengths, iterations, salt lengths
-//    private static final int MAC_256 = 256;
     private static final int MAC_128 = 128;
-//    private static final int MAC_KEY_LENGTH_IN_BYTE = 32;
-    //private static final int MAC_KEY_LENGTH_IN_BYTE = 16;
-    private static final int PBE_ITERATIONS = 5000;
     private static final int PBE_SALT_LENGTH_BYTE = 64;
+    private static int PBE_ITERATIONS;
     // Constants
     private static final String MAC_ALIAS = "SecureAndroid.MacIv.Alias";
-    // Needed objects
-    private CryptoIOHelper cryptoIOHelper;
     // Exception messages
     private static final String WRONG_MODE_EXCEPTION = "Wrong mode, choose SecureAndroid.FILE or SecureAndroid.SHARED_PREFERENCES";
 
     /**
      * Constructor for MACCrypto Class. Sets the context of the superclass.
      * @param context The context.
+     * @param iterations The iteration count for hashing.
      * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
-    public MACCrypto(Context context) throws NoAlgorithmAvailableException {
+    public MACCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
         // Call superclass
         super(context);
         // Check provider availability
         providerCheckMacCrypto();
         // Apply Googles pseudo random number generator fix for API-Level 16-18
         fixPrng();
-        // Instiantiate the cryptoIOHelper
-        cryptoIOHelper = new CryptoIOHelper(context);
+        // set the iteration count
+        PBE_ITERATIONS = iterations;
     }
 
     /**
@@ -90,7 +86,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @return              the SaltAndKey object
      * @throws GeneralSecurityException
      */
-    public SaltAndKey generateMacKeyFromPasswordGetSalt(char[] password, int keyLength) throws GeneralSecurityException {
+    public SaltAndKey generateRandomMacKeyFromPasswordGetSalt(char[] password, int keyLength) throws GeneralSecurityException {
         if (keyLength != MAC_128) {// && keyLength != MAC_256) {
             keyLength = MAC_128;
         }
@@ -131,9 +127,9 @@ public class MACCrypto extends CryptoIOHelper {
      */
     public byte[] loadMAC(int mode, String alias) throws IOException, CryptoIOHelper.WrongModeException, CryptoIOHelper.DataNotAvailableException {
         if (mode == SecureAndroid.SHARED_PREFERENCES) {
-            return cryptoIOHelper.loadFromSharedPrefBase64(MAC_ALIAS, alias);
+            return super.loadFromSharedPrefBase64(MAC_ALIAS, alias);
         } else if (mode == SecureAndroid.FILE) {
-            return cryptoIOHelper.readBytesFromFileBase64(alias);
+            return super.readBytesFromFileBase64(alias);
         } else {
             throw new CryptoIOHelper.WrongModeException(WRONG_MODE_EXCEPTION);
         }
@@ -169,11 +165,15 @@ public class MACCrypto extends CryptoIOHelper {
         }
         if (algorithms.contains("HmacSHA256")) {
             MAC_ALGORITHM = "HmacSHA256";
+//            Log.i("Info MACCrypto", "HmacSHA256");
         } else if (algorithms.contains("HMACSHA256")) {
             MAC_ALGORITHM = "HMACSHA256";
+//            Log.i("Info MACCrypto", "HMACSHA256");
         } else if (algorithms.contains("HmacSHA1")) {
+//            Log.i("Info MACCrypto", "HmacSHA1");
             MAC_ALGORITHM = "HmacSHA1";
         } else if (algorithms.contains("HMACSHA1")) {
+//            Log.i("Info MACCrypto", "HMACSHA1");
             MAC_ALGORITHM = "HMACSHA1";
         } else {
             throw new NoAlgorithmAvailableException(NO_ALG_MSG);

@@ -26,7 +26,7 @@ public class AESCrypto extends CryptoIOHelper {
     // private static final int AES_256 = 256;
     private static final int AES_128 = 128;
     private static final int IVECTOR_LENGTH_IN_BYTE = 16;
-    private static final int PBE_ITERATIONS = 5000;
+    private static int PBE_ITERATIONS;
     private static final int PBE_SALT_LENGTH_BYTE = 64;
     // For Storage
     private static final String CIPHER_PART = "cipher";
@@ -34,10 +34,11 @@ public class AESCrypto extends CryptoIOHelper {
 
     /**
      * Constructor for AESCrypto Class. Sets the context of the superclass.
-     * @param context   the context
+     * @param context   The context.
+     * @param iterations The iteration count for hashing.
      * @throws NoAlgorithmAvailableException
      */
-    public AESCrypto(Context context) throws NoAlgorithmAvailableException {
+    public AESCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
         // Call superclass
         super(context);
         // Check availability of provoders
@@ -46,6 +47,8 @@ public class AESCrypto extends CryptoIOHelper {
         fixPrng();
         // Set AES-Mode
         AES_MODE = "AES/CBC/PKCS5Padding";
+        // set the iteration count
+        PBE_ITERATIONS = iterations;
     }
 
     /**
@@ -100,7 +103,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @return              the AES-Key
      * @throws GeneralSecurityException
      */
-    public SecretKey generateRandomAESKeyFromPasswordSetSalt(char[] password, byte[] salt, int keyLength) throws GeneralSecurityException {
+    public SecretKey generateAESKeyFromPasswordSetSalt(char[] password, byte[] salt, int keyLength) throws GeneralSecurityException {
         if (keyLength != AES_128) {// && keyLength != AES_256) {
             keyLength = AES_128;
         }

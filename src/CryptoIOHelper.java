@@ -4,25 +4,44 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Base64;
+import android.util.Log;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.UUID;
 
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 
 public class CryptoIOHelper {
 
     // Context
     private Context context;
     // Exception messages
-    private final static String DATA_NOT_AVAILABLE = "Data from SharedPreferences is emtpy";
+    private final static String DATA_NOT_AVAILABLE = "Data not available";
+    // Message if no suitable algorithm available
+    private static final String NO_ALG_MSG = "No algorithm available on this platform";
+    // Variables for performance test
+    private static String PBE_ALGORITHM;
+    //private static int PBE_ITERATIONS;
+    private static final int PBE_SALT_LENGTH_BYTE = 64;
+    private static final int KEY_LENGTH = 256;
+    //private static final int PERFORMANCE_CHECK = 1000;
+    private static final int ITERATION_BASE = 100;
+    // For logging
+    private static final String TAG = CryptoIOHelper.class.getSimpleName();
+    private static final String EXC = "Exception";
 
     /**
      * Constructor, sets the context.
@@ -32,6 +51,7 @@ public class CryptoIOHelper {
         this.context = context;
         // Apply Googles pseudo random number generator fix
         fixPrng();
+        //For performance test
     }
 
     /**
@@ -76,9 +96,10 @@ public class CryptoIOHelper {
      * @throws CryptoIOHelper.DataNotAvailableException
      */
     public void deleteFile  (String filename) throws DataNotAvailableException {
-        String dir = context.getFilesDir().getAbsolutePath();
-        File file = new File(dir, filename);
-        if (!file.delete()) {
+        final String dir = context.getFilesDir().getAbsolutePath();
+        final File file = new File(dir, filename);
+        final boolean deleted = file.delete();
+        if (!deleted) {
             throw new DataNotAvailableException(DATA_NOT_AVAILABLE);
         }
     }
@@ -314,5 +335,42 @@ public class CryptoIOHelper {
         fis.read(buffer);
         fis.close();
         return buffer;
+    }
+
+    /**
+     * Checks the performance of the device when running PBKD.
+     * @param iterations The iteraions.
+     * @return  True if a certain threshhold (PERFORMANCE_CHECK) has been eclipsed, False otherwise.
+     * @throws NoSuchAlgorithmException
+     * @throws InvalidKeySpecException
+     */
+    public long hashPerformanceTest(int iterations) throws NoSuchAlgorithmException, InvalidKeySpecException, NoAlgorithmAvailableException {
+        checkPerformanceAlgorithmsLength();
+        // Performance check start
+        final long startTime = System.currentTimeMillis();
+        // Instantiate key specifications with desired parameters
+        final byte[] salt = generateRandomBytes(PBE_SALT_LENGTH_BYTE);
+        final KeySpec keySpec = new PBEKeySpec("testpassword".toCharArray(), salt, iterations, KEY_LENGTH);
+        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
+        final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
+        // Performance check
+        final long stopTime = System.currentTimeMillis();
+        final long elapsedTime = stopTime - startTime;
+        return (10000/elapsedTime) * ITERATION_BASE;
+    }
+
+    /**
+     * Checks whether a suitable algorithm for PBKD is available.
+     * @throws CryptoIOHelper.NoAlgorithmAvailableException
+     */
+    private void checkPerformanceAlgorithmsLength() throws CryptoIOHelper.NoAlgorithmAvailableException {
+        final LinkedList<String> algorithms = providerCheck();
+        if (algorithms.contains("PBKDF2WithHmacSHA256")) {
+            PBE_ALGORITHM = "PBKDF2WithHmacSHA256";
+        } else if (algorithms.contains("PBKDF2WithHmacSHA1")) {
+            PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
+        } else {
+            throw new NoAlgorithmAvailableException(NO_ALG_MSG);
+        }
     }
 }

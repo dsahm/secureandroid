@@ -19,22 +19,25 @@ public class PasswordCrypto extends CryptoIOHelper {
     // PBE-Mode
     private String PBE_ALGORITHM;
     // Key length, iterations, salt length
-    private static final int PBE_ITERATIONS = 5000;
+    private static int PBE_ITERATIONS;// = 5000;
     private static final int PBE_SALT_LENGTH_BYTE = 64;
     private static final int KEY_LENGTH = 256;
 
     /**
      * Constructor for PasswordCrypto Class. Sets the context of the superclass.
      * @param context   The context.
+     * @param iterations The iteration count for hashing.
      * @throws NoAlgorithmAvailableException
      */
-    public PasswordCrypto(Context context) throws NoAlgorithmAvailableException {
+    public PasswordCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
         // Call the superclass
         super(context);
         // Check provider availability
         providerCheckPasswordCrypto();
         // Apply Googles pseudo random number generator fix for API-Level 16-18
         fixPrng();
+        // set the iteration count
+        PBE_ITERATIONS = iterations;
     }
 
     /**
@@ -174,7 +177,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param saltAlias             The alias for the salt within the SharedPreferences.
      */
     public void storeHashedPasswordAndSaltSharedPref(HashedPasswordAndSalt hashedPasswordAndSalt, String spAlias, String passwordAlias, String saltAlias) {
-        storeHashInSharedPrefBase64(spAlias, passwordAlias, hashedPasswordAndSalt.getPassword());
+        storeHashInSharedPrefBase64(spAlias, passwordAlias, hashedPasswordAndSalt.getHashedPassword());
         storeSaltInSharedPrefBase64(spAlias, saltAlias, hashedPasswordAndSalt.getSalt());
     }
 
@@ -197,7 +200,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @throws IOException
      */
     public void storeHashedPasswordAndSaltFile(HashedPasswordAndSalt hashedPasswordAndSalt, String filename) throws IOException {
-        storeHashInFileBase64(filename+HASH_PART, hashedPasswordAndSalt.getPassword());
+        storeHashInFileBase64(filename+HASH_PART, hashedPasswordAndSalt.getHashedPassword());
         storeSaltInFileBase64(filename+SALT_PART, hashedPasswordAndSalt.getSalt());
     }
 
@@ -246,7 +249,7 @@ public class PasswordCrypto extends CryptoIOHelper {
             this.salt = salt;
         }
 
-        public byte[] getPassword() {
+        public byte[] getHashedPassword() {
             return password;
         }
         public byte[] getSalt() {

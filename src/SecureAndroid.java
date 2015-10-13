@@ -3,6 +3,8 @@ package my.secureandroid;
 import android.content.Context;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.LinkedList;
 
 import javax.crypto.SecretKey;
@@ -34,8 +36,10 @@ public class SecureAndroid {
     private static final int AES_KEY_LENGTH = 128;
     private static final int MAC_KEY_LENGTH = 128;
     private static final int IV_LENGTH_BYTE = 16;
-    private static int MAC_LENGTH_BYTE;// = 20;
-    private static int MACPLUSIV_LENGTH_BYTE;// = IV_LENGTH_BYTE+MAC_LENGTH_BYTE;
+    private static int MAC_LENGTH_BYTE;
+    private static int MACPLUSIV_LENGTH_BYTE;
+    private static final int ITERATION_FACTOR = 3;
+    private static final int ITERATION_MIDDLE = 10000;
     public static final int SHARED_PREFERENCES = 0;
     public static final int FILE = 1;
 
@@ -55,11 +59,14 @@ public class SecureAndroid {
      * @param context The context.
      * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
-    public SecureAndroid(Context context) throws CryptoIOHelper.NoAlgorithmAvailableException {
-        aesCrypto = new AESCrypto(context);
-        passwordCrypto = new PasswordCrypto(context);
-        macKrypto = new MACCrypto(context);
+    public SecureAndroid(Context context) throws CryptoIOHelper.NoAlgorithmAvailableException, NoSuchAlgorithmException, InvalidKeySpecException {
         cryptoIOHelper = new CryptoIOHelper(context);
+        // Get the suitable iteration count for good performance and security
+        final int iterations = (int)(cryptoIOHelper.hashPerformanceTest(ITERATION_MIDDLE))/ITERATION_FACTOR;
+        // Instantiate needed objects
+        aesCrypto = new AESCrypto(context, iterations);
+        passwordCrypto = new PasswordCrypto(context, iterations);
+        macKrypto = new MACCrypto(context, iterations);
         // Check and define the MAC length according to the availability of SHA256/1 on the platform
         checkMacLength();
         MACPLUSIV_LENGTH_BYTE = IV_LENGTH_BYTE+MAC_LENGTH_BYTE;
@@ -75,7 +82,7 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.WrongPasswordException
      */
     public byte[] encrypt(byte[] plaintext) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
-        return this.encrypt(plaintext, getAutoPassword().toCharArray());
+        return encrypt(plaintext, getAutoPassword().toCharArray());
     }
 
     /**
@@ -89,7 +96,7 @@ public class SecureAndroid {
      */
     public byte[] decrypt(byte[] ciphertext) throws GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException,
             CryptoIOHelper.IntegrityCheckFailedException {
-        return this.decrypt(ciphertext, getAutoPassword().toCharArray());
+        return decrypt(ciphertext, getAutoPassword().toCharArray());
     }
 
     /**
@@ -104,7 +111,7 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.DataNotAvailableException
      */
     public byte[] encryptWithPassword(byte[] plaintext, char[] password) throws CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.WrongPasswordException, CryptoIOHelper.DataNotAvailableException {
-        return this.encrypt(plaintext, password);
+        return encrypt(plaintext, password);
     }
 
     /**
@@ -120,7 +127,7 @@ public class SecureAndroid {
      */
     public byte[] decryptWithPassword(byte[] ciphertext, char[] password) throws CryptoIOHelper.DataNotAvailableException, CryptoIOHelper.WrongPasswordException,
             GeneralSecurityException, CryptoIOHelper.IntegrityCheckFailedException {
-        return this.decrypt(ciphertext, password);
+        return decrypt(ciphertext, password);
     }
 
     /**
@@ -181,7 +188,7 @@ public class SecureAndroid {
         }
         final AESCrypto.CipherIV cipherIv = aesCrypto.encryptAES(plaintext, secretKeys.getAesKey());
         final byte[] mac = macKrypto.generateMac(cipherIv.getCipher(), secretKeys.getMacKey());
-        this.saveUserCipherMacIv(mode, cipherIv, mac, alias);
+        saveUserCipherMacIv(mode, cipherIv, mac, alias);
     }
 
     /**
@@ -239,7 +246,7 @@ public class SecureAndroid {
             // If no key data was stored, create and store key data und use the stored key data to decrypt ciphertext
             secretKeys = createAndStoreAndGetKeyData(password);
         }
-        final AESCrypto.CipherIV cipherIv = this.getUserCipherIv(mode, alias);
+        final AESCrypto.CipherIV cipherIv = getUserCipherIv(mode, alias);
         final byte[] mac = macKrypto.loadMAC(mode, alias);
         if (macKrypto.checkIntegrity(cipherIv.getCipher(), mac, secretKeys.getMacKey())) {
             return aesCrypto.decryptAES(cipherIv.getCipher(), cipherIv.getIv(), secretKeys.getAesKey());
@@ -379,7 +386,7 @@ public class SecureAndroid {
         // Generate master AES key
         final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(password, AES_KEY_LENGTH);
         // Generate master MAC key
-        final AESCrypto.SaltAndKey macMasterKeyAndSalt = macKrypto.generateMacKeyFromPasswordGetSalt(password, MAC_KEY_LENGTH);
+        final AESCrypto.SaltAndKey macMasterKeyAndSalt = macKrypto.generateRandomMacKeyFromPasswordGetSalt(password, MAC_KEY_LENGTH);
         // Save the salt used to generate the aes master-key in Shared Preferences
         cryptoIOHelper.saveToSharedPrefBase64(KEY_DATA_ALIAS, AES_MASTERKEY_SALT_ALIAS, aesMasterKeyAndSalt.getSalt());
         // Save the salt used to generate the mac master-key in Shared Preferences
@@ -432,7 +439,7 @@ public class SecureAndroid {
         final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.
                 getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
         // Check whether the hash of the given password+salt equals the hash of the store password
-        if (passwordCrypto.checkPassword(password, hashedPasswordAndSalt.getPassword(), hashedPasswordAndSalt.getSalt())) {
+        if (passwordCrypto.checkPassword(password, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
             // Load the salt values for generating the master aes and mac key
             final byte[] aesSalt = cryptoIOHelper.loadFromSharedPrefBase64(KEY_DATA_ALIAS, AES_MASTERKEY_SALT_ALIAS);
             final byte[] macSalt = cryptoIOHelper.loadFromSharedPrefBase64(KEY_DATA_ALIAS, MAC_MASTER_KEY_SALT_ALIAS);
@@ -448,7 +455,7 @@ public class SecureAndroid {
             if (macKrypto.checkIntegrity(intermediateAESCipherIV.getCipher(), intermediateAesKeyMac, macMasterKey) &&
                     macKrypto.checkIntegrity(intermediateMacCipherIv.getCipher(), intermediateMacKeyMac, macMasterKey)) {
                 // generate Master AES-Key
-                final SecretKey aesMasterKey = aesCrypto.generateRandomAESKeyFromPasswordSetSalt(password, aesSalt, AES_KEY_LENGTH);
+                final SecretKey aesMasterKey = aesCrypto.generateAESKeyFromPasswordSetSalt(password, aesSalt, AES_KEY_LENGTH);
                 // Extract the raw key data for aes and mac intermediate keys
                 final byte[] aes = aesCrypto.decryptAES(intermediateAESCipherIV.getCipher(), intermediateAESCipherIV.getIv(), aesMasterKey);
                 final byte[] mac = aesCrypto.decryptAES(intermediateMacCipherIv.getCipher(), intermediateMacCipherIv.getIv(), aesMasterKey);
