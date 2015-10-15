@@ -156,6 +156,24 @@ sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span
 <a id="exceptions" class="anchor" href="#exceptions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exceptions</h3>
 
 <p>Note that SecureAndroid will throw some useful exceptions if something wrong, for example if the wrong password was provided or you want to retrieve data that does not exist. See the javadocs for details.</p>
+
+<h3>
+<a id="how-does-it-work-under-the-hood" class="anchor" href="#how-does-it-work-under-the-hood" aria-hidden="true"><span class="octicon octicon-link"></span></a>How does it work under the hood?</h3>
+
+<p>SecureAndroid takes an intermediate-key approach. All data is encrypted with AES-128 in CBC-Mode and Padding according to PKCS5. The integrity is checked with HmacSHA256/HmacSHA1, according to the availability on the device. The AES- and MAC-Keys used for enc- and decryption are themselves encrypted with an AES- and MAC-Masterkey and then stored on the device in encrypted form. The Masterkeys themselves are never stored on the device but are derived by PBKDFHmacSHA256/SHA1 on enc- or decryption.</p>
+
+<h3>
+<a id="what-password-is-used-for-deriving-the-master-keys" class="anchor" href="#what-password-is-used-for-deriving-the-master-keys" aria-hidden="true"><span class="octicon octicon-link"></span></a>What password is used for deriving the master-keys?</h3>
+
+<p>If you simply use the encrypt and decrypt-methods an automatic password is generated and then fed into the PBKDF2. That password is a hash of device information and therefore bound to a device. <em>That means you cannot decrypt something only on the device it was encrypted with</em>. </p>
+
+<p>If you provide a password yourself or ask the user to provide one, that passphrase then is used to derive the keys. The intermediate keys are generated on the <em>first encryption operation</em>. In all subsequent encryption- or decryption processes these intermediate keys are use. 
+<em>Note</em>: If you use SecureAndroid in an app, this means that the key-material will be deleted on app-deletion because it is stored in the apps SharedPreferences. If data should survive an app-uninstallation, you must provide that mechanism.</p>
+
+<h3>
+<a id="where-is-data-stored" class="anchor" href="#where-is-data-stored" aria-hidden="true"><span class="octicon octicon-link"></span></a>Where is data stored?</h3>
+
+<p>All key material is stored in the SharedPreferences of the app that you are using SecureAndroid with. The encrypted data is stored either in the SharedPreferences or in a file, according the mode-flag (see Javadocs or explanation above).</p>
         </section>
 
         <footer>
