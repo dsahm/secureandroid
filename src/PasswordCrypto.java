@@ -21,7 +21,7 @@ public class PasswordCrypto extends CryptoIOHelper {
     // Key length, iterations, salt length
     private static int PBE_ITERATIONS;// = 5000;
     private static final int PBE_SALT_LENGTH_BYTE = 64;
-    private static final int KEY_LENGTH = 256;
+    private static int KEY_LENGTH;
 
     /**
      * Constructor for PasswordCrypto Class. Sets the context of the superclass.
@@ -83,7 +83,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @throws GeneralSecurityException
      */
     public boolean checkPassword(char[] password, byte[] hash, byte[] salt) throws GeneralSecurityException {
-        return Arrays.equals(this.hashPasswordWithSalt(password, salt), hash);
+        return Arrays.equals(hashPasswordWithSalt(password, salt), hash);
     }
 
     /**
@@ -103,7 +103,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @throws IOException
      */
     public byte[] getHashFromFile(String filename) throws IOException {
-        return super.readBytesFromFileBase64(filename);
+        return super.readBytesFromFile(filename);
     }
 
     /**
@@ -113,7 +113,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @throws IOException
      */
     public byte[] getSaltFromFile(String filename) throws IOException {
-        return super.readBytesFromFileBase64(filename);
+        return super.readBytesFromFile(filename);
     }
 
     /**
@@ -222,8 +222,10 @@ public class PasswordCrypto extends CryptoIOHelper {
         final LinkedList<String> algorithms = super.providerCheck();
         if (algorithms.contains("PBKDF2WithHmacSHA256")) {
             PBE_ALGORITHM = "PBKDF2WithHmacSHA256";
+            KEY_LENGTH = 256;
         } else if (algorithms.contains("PBKDF2WithHmacSHA1")) {
             PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
+            KEY_LENGTH = 160;
         } else {
             throw new NoAlgorithmAvailableException(NO_ALG_MSG);
         }
@@ -276,6 +278,6 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @throws IOException
      */
     public byte[] getSaltFromFileBase64(String filename) throws IOException {
-        return super.readBytesFromFileBase64(filename);
+        return super.readBytesFromFile(filename);
     }
 }

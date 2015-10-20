@@ -50,19 +50,15 @@ public class MACCrypto extends CryptoIOHelper {
     }
 
     /**
-     * Generates and returns a 256-Bit long Mac-Key.
+     * Generates and returns a 128-Bit long Mac-Key.
      * @return              The generated Mac-Key
      * @throws              NoSuchAlgorithmException
      */
     public SecretKey generateMacKey() throws NoSuchAlgorithmException{
-//        byte[] macBytes = super.generateRandomBytes(MAC_KEY_LENGTH_IN_BYTE);
         KeyGenerator keyGenerator;
-
-            keyGenerator = KeyGenerator.getInstance(MAC_ALGORITHM);
-            keyGenerator.init(MAC_128);
-
+        keyGenerator = KeyGenerator.getInstance(MAC_ALGORITHM);
+        keyGenerator.init(MAC_128);
         return keyGenerator.generateKey();
-//        return new SecretKeySpec(macBytes, MAC_ALGORITHM);
     }
 
     /**
@@ -80,39 +76,33 @@ public class MACCrypto extends CryptoIOHelper {
 
     /**
      * Generates a MAC-Key from the given password with the given kelength. If the keylength is
-     * neither 128 nor 256 Bit, it will be set to 256 Bit.
+     * not 128 Bit, it will be set to 128 Bit.
      * @param password      the password
-     * @param keyLength     the desired keylength
      * @return              the SaltAndKey object
      * @throws GeneralSecurityException
      */
-    public SaltAndKey generateRandomMacKeyFromPasswordGetSalt(char[] password, int keyLength) throws GeneralSecurityException {
-        if (keyLength != MAC_128) {// && keyLength != MAC_256) {
-            keyLength = MAC_128;
-        }
+    public SaltAndKey generateRandomMacKeyFromPasswordGetSalt(char[] password) throws GeneralSecurityException {
         final byte[] salt = super.generateRandomBytes(PBE_SALT_LENGTH_BYTE);
-        final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, keyLength);
+        final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, MAC_128);
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
         final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
         return new SaltAndKey(new SecretKeySpec(temp, MAC_INSTANCE), salt);
+//        return new SaltAndKey(keyFactory.generateSecret(keySpec), salt);
     }
 
     /**
      * Returns the Secret-MAC key generated with the specified salt value and the password.
      * @param password      The password used to derive the key.
      * @param salt          The salt used to derive the key.
-     * @param keyLength     The key length.
      * @return              The secret MAC-Key.
      * @throws GeneralSecurityException
      */
-    public SecretKey generateMacKeyFromPasswordSetSalt(char[] password, byte[] salt, int keyLength) throws GeneralSecurityException {
-        if (keyLength != MAC_128) {// && keyLength != MAC_256) {
-            keyLength = MAC_128;
-        }
-        final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, keyLength);
+    public SecretKey generateMacKeyFromPasswordSetSalt(char[] password, byte[] salt) throws GeneralSecurityException {
+        final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, MAC_128);
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
         final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
         return new SecretKeySpec(temp, MAC_INSTANCE);
+//        return keyFactory.generateSecret(keySpec);
     }
 
     /**
@@ -129,7 +119,7 @@ public class MACCrypto extends CryptoIOHelper {
         if (mode == SecureAndroid.SHARED_PREFERENCES) {
             return super.loadFromSharedPrefBase64(MAC_ALIAS, alias);
         } else if (mode == SecureAndroid.FILE) {
-            return super.readBytesFromFileBase64(alias);
+            return super.readBytesFromFile(alias);
         } else {
             throw new CryptoIOHelper.WrongModeException(WRONG_MODE_EXCEPTION);
         }
@@ -210,7 +200,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @throws IOException
      */
     public SecretKey getMACKeyFromFile(String filename) throws IOException {
-        byte[] temp = super.readBytesFromFileBase64(filename);
+        byte[] temp = super.readBytesFromFile(filename);
         return new SecretKeySpec(temp, 0, temp.length, MAC_INSTANCE);
     }
 

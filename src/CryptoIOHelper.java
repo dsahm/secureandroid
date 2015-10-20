@@ -147,7 +147,7 @@ public class CryptoIOHelper {
      * @return              the data as byte array
      * @throws IOException
      */
-    public byte[] readBytesFromFileBase64(String filename) throws IOException {
+    public byte[] readBytesFromFile(String filename) throws IOException {
         final FileInputStream fis = context.openFileInput(filename);
         final byte [] buffer = new byte[(int) fis.getChannel().size()];
         fis.read(buffer);
@@ -181,7 +181,7 @@ public class CryptoIOHelper {
             final SharedPreferences sharedPreferences = context.getSharedPreferences(spAlias, Context.MODE_PRIVATE);
             String temp = sharedPreferences.getString(dataAlias, null);
             if (temp != null) {
-                return this.decodeBase64String(temp);
+                return decodeBase64String(temp);
             } else {
                 throw new DataNotAvailableException(DATA_NOT_AVAILABLE);
             }
@@ -272,19 +272,29 @@ public class CryptoIOHelper {
 
     //Custom Exceptions
     public static class NoAlgorithmAvailableException extends Exception {
-        public NoAlgorithmAvailableException (String message) { super(message); }
+        public NoAlgorithmAvailableException (String message) {
+            super(message); }
     }
     public static class WrongModeException extends Exception{
-        public WrongModeException (String message) { super(message); }
+        public WrongModeException (String message) {
+            super(message); }
     }
     public static class WrongPasswordException extends Exception {
-        public WrongPasswordException (String message) { super(message); }
+        public WrongPasswordException (String message) {
+            super(message); }
     }
     public static class DataNotAvailableException extends Exception {
-        public DataNotAvailableException (String message) { super(message); }
+        public DataNotAvailableException (String message) {
+            super(message); }
     }
     public static class IntegrityCheckFailedException extends Exception {
-        public IntegrityCheckFailedException(String message) { super(message); }
+        public IntegrityCheckFailedException(String message) {
+            super(message); }
+    }
+    public static class NoKeyMaterialException extends Exception {
+        public NoKeyMaterialException(String message) {
+            super(message);
+        }
     }
 
     /**
@@ -307,36 +317,6 @@ public class CryptoIOHelper {
         }
     }
 
-
-    // Bisher nicht benötigt
-
-    /**
-     * Saves byte array to specified file in the app-folder. The file will only be accessible
-     * by your app.
-     * @param filename      the filename
-     * @param write         data to be saved
-     * @throws IOException
-     */
-    public void saveBytesToFile(String filename, byte[] write) throws IOException {
-        final FileOutputStream fos = context.openFileOutput(filename, Context.MODE_PRIVATE);
-        fos.write(write);
-        fos.close();
-    }
-
-    /**
-     * Reads a formerly saved byte array from the given file in the app folder
-     * @param filename      the filename
-     * @return              the data as byte array
-     * @throws IOException
-     */
-    public byte[] readBytesFromFile(String filename) throws IOException {
-        final FileInputStream fis = context.openFileInput(filename);
-        final byte [] buffer = new byte[(int) fis.getChannel().size()];
-        fis.read(buffer);
-        fis.close();
-        return buffer;
-    }
-
     /**
      * Checks the performance of the device when running PBKD.
      * @param iterations The iteraions.
@@ -352,11 +332,16 @@ public class CryptoIOHelper {
         final byte[] salt = generateRandomBytes(PBE_SALT_LENGTH_BYTE);
         final KeySpec keySpec = new PBEKeySpec("testpassword".toCharArray(), salt, iterations, KEY_LENGTH);
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
-        final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
+        keyFactory.generateSecret(keySpec).getEncoded();
         // Performance check
         final long stopTime = System.currentTimeMillis();
         final long elapsedTime = stopTime - startTime;
-        return (10000/elapsedTime) * ITERATION_BASE;
+        final long returnIterations = (10000/elapsedTime) * ITERATION_BASE;
+        if (returnIterations < 15000) {
+            return 15000;
+        } else {
+            return returnIterations;
+        }
     }
 
     /**

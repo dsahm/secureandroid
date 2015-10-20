@@ -52,69 +52,59 @@ public class AESCrypto extends CryptoIOHelper {
     }
 
     /**
-     * Generates an returns an AES-Key with the specified length. If the length is neither
-     * 128 nor 256 Bit, it will be set to 256 Bit.
-     * @param keyLength     the desired keylength, must be 128 or 256
+     * Generates an returns an AES-Key with the specified length. If the length is not
+     * 128 Bit, it will be set to 128 Bit.
      * @return              the generated AES-Key
      * @throws GeneralSecurityException
      */
-    public SecretKey generateRandomAESKey(int keyLength) throws GeneralSecurityException {
-        if (keyLength != AES_128) {// && keyLength != AES_256) {
-            keyLength = AES_128;
-        }
+    public SecretKey generateRandomAESKey() throws GeneralSecurityException {
         // Instantiante KeyGenerator
         KeyGenerator keyGenerator = KeyGenerator.getInstance(AES_INSTANCE);
         // Initialize generator with the desired keylength
-        keyGenerator.init(keyLength);
+        keyGenerator.init(AES_128);
         // Return new key
         return keyGenerator.generateKey();
     }
 
     /**
      * Generates an AES-Key from the given password with the given keylength. If the keylength is
-     * neither 128 nor 256 Bit, it will be set to 256 Bit.
+     * not 128 Bit, it will be set to 128 Bit.
      * @param password      the password
-     * @param keyLength     the desired keylength
      * @return              the AES-Key and the salt
      * @throws GeneralSecurityException
      */
-    public SaltAndKey generateRandomAESKeyFromPasswordGetSalt(char[] password, int keyLength) throws GeneralSecurityException {
-        if (keyLength != AES_128) { // && keyLength != AES_256) {
-            keyLength = AES_128;
-        }
+    public SaltAndKey generateRandomAESKeyFromPasswordGetSalt(char[] password) throws GeneralSecurityException {
         // Generate random salt
         final byte [] salt = super.generateRandomBytes(PBE_SALT_LENGTH_BYTE);
         // Specifiy Key parameters
-        final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, keyLength);
+        final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, AES_128);
         // Load the key factory
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
         // Generate random sequence for the key
         final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
         // Return new key and salt the key was created with
         return new SaltAndKey(new SecretKeySpec(temp, AES_INSTANCE), salt);
+//        return new SaltAndKey(keyFactory.generateSecret(keySpec), salt);
     }
 
     /**
      * Generates an AES-Key from the given password with the given keylength and the given salt. If the keylength is
      * neither 128 nor 256 Bit, it will be set to 256 Bit.
      * @param password      the password
-     * @param keyLength     the desired keylength
      * @param salt          the salt
      * @return              the AES-Key
      * @throws GeneralSecurityException
      */
-    public SecretKey generateAESKeyFromPasswordSetSalt(char[] password, byte[] salt, int keyLength) throws GeneralSecurityException {
-        if (keyLength != AES_128) {// && keyLength != AES_256) {
-            keyLength = AES_128;
-        }
+    public SecretKey generateAESKeyFromPasswordSetSalt(char[] password, byte[] salt) throws GeneralSecurityException {
         // Specifiy Key parameters
-        final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, keyLength);
+        final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, AES_128);
         // Load the key factory with the specified PBE Algorithm
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
         // Generate random sequence for the key
         final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
         // Generate and return key
         return new SecretKeySpec(temp, AES_INSTANCE);
+//        return keyFactory.generateSecret(keySpec);
     }
 
 
@@ -190,8 +180,8 @@ public class AESCrypto extends CryptoIOHelper {
      * @throws IOException
      */
     public CipherIV getCipherAndIVFromFile(String filename) throws IOException {
-        byte[] cipher = super.readBytesFromFileBase64(filename + CIPHER_PART);
-        byte[] iv = super.readBytesFromFileBase64(filename + IV_PART);
+        byte[] cipher = super.readBytesFromFile(filename + CIPHER_PART);
+        byte[] iv = super.readBytesFromFile(filename + IV_PART);
         return new CipherIV(cipher, iv);
     }
 
@@ -292,18 +282,14 @@ public class AESCrypto extends CryptoIOHelper {
      * Generates an AES-Key from the given password with the given kelength. If the keylength is
      * neither 128 nor 256 Bit, it will be set to 256 Bit.
      * @param password      the password
-     * @param keyLength     the desired keylength
      * @return              the AES-Key
      * @throws GeneralSecurityException
      */
-    public SecretKey generateRandomAESKeyFromPassword(char[] password, int keyLength) throws GeneralSecurityException {
-        if (keyLength != AES_128) {// && keyLength != AES_256) {
-            keyLength = AES_128;
-        }
-        final KeySpec keySpec = new PBEKeySpec(password, super.generateRandomBytes(PBE_SALT_LENGTH_BYTE), PBE_ITERATIONS, keyLength);
+    public SecretKey generateRandomAESKeyFromPassword(char[] password) throws GeneralSecurityException {
+        final KeySpec keySpec = new PBEKeySpec(password, super.generateRandomBytes(PBE_SALT_LENGTH_BYTE), PBE_ITERATIONS, AES_128);
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
-        final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
-        return new SecretKeySpec(temp, AES_INSTANCE);
+//        final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
+        return keyFactory.generateSecret(keySpec);
     }
 
     /**
@@ -324,7 +310,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @throws IOException
      */
     public SecretKey getAESKeyFromFileBase64(String filename) throws IOException {
-        byte[] temp = super.readBytesFromFileBase64(filename);
+        byte[] temp = super.readBytesFromFile(filename);
         return new SecretKeySpec(temp, 0, temp.length, AES_INSTANCE);
     }
 
