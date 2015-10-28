@@ -78,7 +78,8 @@ SecureAndroid abstracts cryptographic implementation details and i/o-operations 
     <span class="pl-c">// Try it out to see the specific exceptions..and do smth</span>
 }</pre></div>
 
-<p>You must pass a Context and the minimum iterations for Password-Based-Key-Derivation to the constructor. For more information on the iteration count, visit <a href="https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet">OWASP</a>. SecureAndroid tunes the iterations automatically so that users will have to wait for about 1000ms when encrypting oder decrypting data. So you need to only think about the minimum iteration count if there really is a minimum that is important to you. Otherwise, simply pass 0. </p>
+<p>You must pass a Context and the minimum iterations for Password-Based-Key-Derivation to the constructor. For more information on the iteration count, visit <a href="https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet">OWASP</a>. SecureAndroid tunes the iterations automatically so that users will have to wait for about 1000ms when encrypting oder decrypting data. So you need to only think about the minimum iteration count if there really is a minimum that is important to you. Otherwise, simply pass 0. 
+If you set a high minimum count that negatively affects your performance, you could - as far as that is possible in the data-flow of your app - use AsyncTasks or Handlers to perform encryption and decryption in the background. </p>
 
 <h3>
 <a id="the-api" class="anchor" href="#the-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>The API</h3>
