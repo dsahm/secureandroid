@@ -40,13 +40,6 @@ SecureAndroid uses AES encryption in CBC mode with padding according to PKCS5. F
 SecureAndroid abstracts cryptographic implementation details and i/o-operations away so that you can concentrate on your app logic. </p>
 
 <h3>
-<a id="important-note" class="anchor" href="#important-note" aria-hidden="true"><span class="octicon octicon-link"></span></a>Important note</h3>
-
-<p>If you use ProGuard, you need to add the following rule:</p>
-
-<div class="highlight highlight-source-java"><pre><span class="pl-k">-</span>keep <span class="pl-k">class</span> <span class="pl-en">my</span>.secureandroid.PRNGFixes$* { <span class="pl-k">*</span>; }</pre></div>
-
-<h3>
 <a id="how-to-add-secureandroid-to-a-project" class="anchor" href="#how-to-add-secureandroid-to-a-project" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to add SecureAndroid to a project</h3>
 
 <p>To use SecureAndroid, simply download the zip or tar.gz file and extract it. In your Android Studio project move to the java folder of your module:</p>
@@ -80,10 +73,12 @@ SecureAndroid abstracts cryptographic implementation details and i/o-operations 
 <p>you can initialize a SecureAndroid object in your activity like this:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-k">try</span> {
-    <span class="pl-smi">SecureAndroid</span> sc <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">SecureAndroid</span>(<span class="pl-smi">MyActivity</span><span class="pl-k">.</span><span class="pl-v">this</span>);
+    <span class="pl-smi">SecureAndroid</span> sc <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">SecureAndroid</span>(<span class="pl-smi">MyActivity</span><span class="pl-k">.</span><span class="pl-v">this</span>, <span class="pl-c1">5000</span>);
 } <span class="pl-k">catch</span> (<span class="pl-smi">Exception</span> e) {
     <span class="pl-c">// Try it out to see the specific exceptions..and do smth</span>
 }</pre></div>
+
+<p>You must pass a Context and the minimum iterations for Password-Based-Key-Derivation to the constructor. For more information on the iteration count, visit <a href="https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet">OWASP</a>. SecureAndroid tunes the iterations automatically so that users will have to wait for about 1000ms when encrypting oder decrypting data. So you need to only think about the minimum iteration count if there really is a minimum that is important to you. Otherwise, simply pass 0. </p>
 
 <h3>
 <a id="the-api" class="anchor" href="#the-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>The API</h3>
