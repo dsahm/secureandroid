@@ -29,7 +29,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param iterations The iteration count for hashing.
      * @throws NoAlgorithmAvailableException
      */
-    public PasswordCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
+    protected PasswordCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
         // Call the superclass
         super(context);
         // Check provider availability
@@ -47,7 +47,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return              the hashed password and the salt the was password was hashed with
      * @throws GeneralSecurityException
      */
-    public HashedPasswordAndSalt hashPassword (char[] password) throws GeneralSecurityException {
+    protected HashedPasswordAndSalt hashPassword (char[] password) throws GeneralSecurityException {
         // Generate the salt
         final byte[] salt = super.generateRandomBytes(PBE_SALT_LENGTH_BYTE);
         // Instantiate key specifications with desired parameters
@@ -66,7 +66,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return          The hashed password.
      * @throws GeneralSecurityException
      */
-    public byte [] hashPasswordWithSalt (char[] password, byte [] salt) throws GeneralSecurityException {
+    protected byte [] hashPasswordWithSalt (char[] password, byte [] salt) throws GeneralSecurityException {
         // Instantiate key specifications with desired parameters
         final KeySpec keySpec = new PBEKeySpec(password, salt, PBE_ITERATIONS, KEY_LENGTH);
         // Instantiate key factory with the desired PBE-Algorithm
@@ -82,7 +82,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return          true if check was successful, false otherwise
      * @throws GeneralSecurityException
      */
-    public boolean checkPassword(char[] password, byte[] hash, byte[] salt) throws GeneralSecurityException {
+    protected boolean checkPassword(char[] password, byte[] hash, byte[] salt) throws GeneralSecurityException {
         return Arrays.equals(hashPasswordWithSalt(password, salt), hash);
     }
 
@@ -92,7 +92,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param hash          the hashed password
      * @throws IOException
      */
-    public void storeHashInFileBase64(String filename, byte[] hash) throws IOException {
+    protected void storeHashInFileBase64(String filename, byte[] hash) throws IOException {
         super.saveBytesToFileBase64(filename, hash);
     }
 
@@ -102,7 +102,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return              the hash
      * @throws IOException
      */
-    public byte[] getHashFromFile(String filename) throws IOException {
+    protected byte[] getHashFromFile(String filename) throws IOException {
         return super.readBytesFromFile(filename);
     }
 
@@ -112,7 +112,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return              the salt
      * @throws IOException
      */
-    public byte[] getSaltFromFile(String filename) throws IOException {
+    protected byte[] getSaltFromFile(String filename) throws IOException {
         return super.readBytesFromFile(filename);
     }
 
@@ -122,7 +122,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param hashAlias       the alias under which the hash is stored in SharePref
      * @param hash            the hashed password
      */
-    public void storeHashInSharedPrefBase64(String spAlias, String hashAlias, byte[] hash) {
+    protected void storeHashInSharedPrefBase64(String spAlias, String hashAlias, byte[] hash) {
         super.saveToSharedPrefBase64(spAlias, hashAlias, hash);
     }
 
@@ -133,7 +133,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return              the hash
      * @throws              CryptoIOHelper.DataNotAvailableException
      */
-    public byte[] getHashFromSharedPref(String spAlias, String hashAlias) throws DataNotAvailableException {
+    protected byte[] getHashFromSharedPref(String spAlias, String hashAlias) throws DataNotAvailableException {
         return super.loadFromSharedPrefBase64(spAlias, hashAlias);
     }
 
@@ -143,7 +143,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param salt      The salt to be stored.
      * @throws IOException
      */
-    public void storeSaltInFileBase64(String filename, byte[] salt) throws IOException {
+    protected void storeSaltInFileBase64(String filename, byte[] salt) throws IOException {
         super.saveBytesToFileBase64(filename, salt);
     }
 
@@ -153,7 +153,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param saltAlias       the alias under which the salt is stored in SharePref
      * @param salt            the salt
      */
-    public void storeSaltInSharedPrefBase64(String spAlias, String saltAlias, byte[] salt) {
+    protected void storeSaltInSharedPrefBase64(String spAlias, String saltAlias, byte[] salt) {
         super.saveToSharedPrefBase64(spAlias, saltAlias, salt);
     }
 
@@ -164,7 +164,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return              The salt as a byte array.
      * @throws              CryptoIOHelper.DataNotAvailableException
      */
-    public byte[] getSaltFromSharedPref(String spAlias, String saltAlias) throws DataNotAvailableException {
+    protected byte[] getSaltFromSharedPref(String spAlias, String saltAlias) throws DataNotAvailableException {
         return super.loadFromSharedPrefBase64(spAlias, saltAlias);
     }
 
@@ -176,7 +176,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param passwordAlias         The alias for the hashed password within the SharedPreferences.
      * @param saltAlias             The alias for the salt within the SharedPreferences.
      */
-    public void storeHashedPasswordAndSaltSharedPref(HashedPasswordAndSalt hashedPasswordAndSalt, String spAlias, String passwordAlias, String saltAlias) {
+    protected void storeHashedPasswordAndSaltSharedPref(HashedPasswordAndSalt hashedPasswordAndSalt, String spAlias, String passwordAlias, String saltAlias) {
         storeHashInSharedPrefBase64(spAlias, passwordAlias, hashedPasswordAndSalt.getHashedPassword());
         storeSaltInSharedPrefBase64(spAlias, saltAlias, hashedPasswordAndSalt.getSalt());
     }
@@ -189,7 +189,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return                  The HashedPasswordAndSalt object.
      * @throws                  CryptoIOHelper.DataNotAvailableException
      */
-    public HashedPasswordAndSalt getHashedPasswordAndSaltSharedPref(String spAlias, String passwordAlias, String saltAlias) throws DataNotAvailableException {
+    protected HashedPasswordAndSalt getHashedPasswordAndSaltSharedPref(String spAlias, String passwordAlias, String saltAlias) throws DataNotAvailableException {
         return new HashedPasswordAndSalt(getHashFromSharedPref(spAlias, passwordAlias), getSaltFromSharedPref(spAlias, saltAlias));
     }
 
@@ -199,9 +199,9 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param filename                   The filename.
      * @throws IOException
      */
-    public void storeHashedPasswordAndSaltFile(HashedPasswordAndSalt hashedPasswordAndSalt, String filename) throws IOException {
-        storeHashInFileBase64(filename+HASH_PART, hashedPasswordAndSalt.getHashedPassword());
-        storeSaltInFileBase64(filename+SALT_PART, hashedPasswordAndSalt.getSalt());
+    protected void storeHashedPasswordAndSaltFile(HashedPasswordAndSalt hashedPasswordAndSalt, String filename) throws IOException {
+        storeHashInFileBase64(filename + HASH_PART, hashedPasswordAndSalt.getHashedPassword());
+        storeSaltInFileBase64(filename + SALT_PART, hashedPasswordAndSalt.getSalt());
     }
 
     /**
@@ -210,8 +210,36 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @return              The HashedPasswordAndSalt object.
      * @throws IOException
      */
-    public HashedPasswordAndSalt getHashedPasswordAndSaltFromFile(String filename) throws IOException {
-        return new HashedPasswordAndSalt(getHashFromFile(filename + HASH_PART), getSaltFromFile(filename+SALT_PART));
+    protected HashedPasswordAndSalt getHashedPasswordAndSaltFromFile(String filename) throws IOException {
+        return new HashedPasswordAndSalt(getHashFromFile(filename + HASH_PART), getSaltFromFile(filename + SALT_PART));
+    }
+
+    // Class to hold a HASHED! password and the corresponding salt as byte arrays
+    protected class HashedPasswordAndSalt {
+
+        private byte[] password, salt;
+
+        protected HashedPasswordAndSalt(byte[] password, byte[] salt) {
+            this.password = password;
+            this.salt = salt;
+        }
+
+        protected byte[] getHashedPassword() {
+            return password;
+        }
+        protected byte[] getSalt() {
+            return salt;
+        }
+    }
+
+    /**
+     * Returns a HashedPasswordAndSalt instance
+     * @param password  The password.
+     * @param salt      The salt.
+     * @return          The HashedPasswordAndSalt object.
+     */
+    protected HashedPasswordAndSalt instantiateHashedPasswordAndSalt(byte[] password, byte[] salt) {
+        return new HashedPasswordAndSalt(password, salt);
     }
 
     /**
@@ -239,45 +267,5 @@ public class PasswordCrypto extends CryptoIOHelper {
         synchronized (PRNGFixes.class) {
             PRNGFixes.apply();
         }
-    }
-
-    // Class to hold a HASHED! password and the corresponding salt as byte arrays
-    public class HashedPasswordAndSalt {
-
-        private byte[] password, salt;
-
-        public HashedPasswordAndSalt(byte[] password, byte[] salt) {
-            this.password = password;
-            this.salt = salt;
-        }
-
-        public byte[] getHashedPassword() {
-            return password;
-        }
-        public byte[] getSalt() {
-            return salt;
-        }
-    }
-
-    /**
-     * Returns a HashedPasswordAndSalt instance
-     * @param password  The password.
-     * @param salt      The salt.
-     * @return          The HashedPasswordAndSalt object.
-     */
-    public HashedPasswordAndSalt instantiateHashedPasswordAndSalt(byte[] password, byte[] salt) {
-        return new HashedPasswordAndSalt(password, salt);
-    }
-
-
-    // Bisher nicht benötigt
-    /**
-     * Retrieves the salt value stored under the specified filename.
-     * @param filename  The filename.
-     * @return          The salt value as byte array.
-     * @throws IOException
-     */
-    public byte[] getSaltFromFileBase64(String filename) throws IOException {
-        return super.readBytesFromFile(filename);
     }
 }

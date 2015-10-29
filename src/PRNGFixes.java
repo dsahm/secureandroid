@@ -1,4 +1,4 @@
-package dsahm.Crypto;
+package my.secureandroid;
 
 /*
  * This software is provided 'as-is', without any express or implied

@@ -38,7 +38,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @param iterations The iteration count for hashing.
      * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
-    public MACCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
+    protected MACCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
         // Call superclass
         super(context);
         // Check provider availability
@@ -54,7 +54,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @return              The generated Mac-Key
      * @throws              NoSuchAlgorithmException
      */
-    public SecretKey generateMacKey() throws NoSuchAlgorithmException{
+    protected SecretKey generateMacKey() throws NoSuchAlgorithmException{
         KeyGenerator keyGenerator;
         keyGenerator = KeyGenerator.getInstance(MAC_ALGORITHM);
         keyGenerator.init(MAC_128);
@@ -68,7 +68,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @return          mac as byte array
      * @throws GeneralSecurityException
      */
-    public byte[] generateMac(byte[] cipher, SecretKey macKey) throws GeneralSecurityException {
+    protected byte[] generateMac(byte[] cipher, SecretKey macKey) throws GeneralSecurityException {
         final Mac mac = Mac.getInstance(MAC_ALGORITHM);
         mac.init(macKey);
         return mac.doFinal(cipher);
@@ -81,7 +81,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @return              the SaltAndKey object
      * @throws GeneralSecurityException
      */
-    public SaltAndKey generateRandomMacKeyFromPasswordGetSalt(char[] password) throws GeneralSecurityException {
+    protected SaltAndKey generateRandomMacKeyFromPasswordGetSalt(char[] password) throws GeneralSecurityException {
         final byte[] salt = super.generateRandomBytes(PBE_SALT_LENGTH_BYTE);
         final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, MAC_128);
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
@@ -97,7 +97,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @return              The secret MAC-Key.
      * @throws GeneralSecurityException
      */
-    public SecretKey generateMacKeyFromPasswordSetSalt(char[] password, byte[] salt) throws GeneralSecurityException {
+    protected SecretKey generateMacKeyFromPasswordSetSalt(char[] password, byte[] salt) throws GeneralSecurityException {
         final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, MAC_128);
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
         final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
@@ -115,7 +115,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @throws CryptoIOHelper.WrongModeException
      * @throws CryptoIOHelper.DataNotAvailableException
      */
-    public byte[] loadMAC(int mode, String alias) throws IOException, CryptoIOHelper.WrongModeException, CryptoIOHelper.DataNotAvailableException {
+    protected byte[] loadMAC(int mode, String alias) throws IOException, CryptoIOHelper.WrongModeException, CryptoIOHelper.DataNotAvailableException {
         if (mode == SecureAndroid.SHARED_PREFERENCES) {
             return super.loadFromSharedPrefBase64(MAC_ALIAS, alias);
         } else if (mode == SecureAndroid.FILE) {
@@ -134,7 +134,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @return              true if check was successful, false otherwise
      * @throws GeneralSecurityException
      */
-    public boolean checkIntegrity(byte[] cipherText, byte[] mac, SecretKey macKey) throws GeneralSecurityException {
+    protected boolean checkIntegrity(byte[] cipherText, byte[] mac, SecretKey macKey) throws GeneralSecurityException {
         return Arrays.equals(mac, this.generateMac(cipherText, macKey));
     }
 
@@ -178,52 +178,5 @@ public class MACCrypto extends CryptoIOHelper {
         synchronized (PRNGFixes.class) {
             PRNGFixes.apply();
         }
-    }
-
-    // Not yet needed
-
-    /**
-     * Saves MAC-Key to specified file, encoded in Base64. The file is only accessible by
-     * your app.
-     * @param secretKey     the secret MAC-key
-     * @param filename      the file in which the key should be stored
-     * @throws IOException
-     */
-    public void saveMACKeyToFileBase64(SecretKey secretKey, String filename) throws IOException {
-        super.saveBytesToFileBase64(filename, secretKey.getEncoded());
-    }
-
-    /**
-     * Retrieves and returns the MAC-Key saved in the specified file.
-     * @param filename      the filename
-     * @return              the MAC-Key
-     * @throws IOException
-     */
-    public SecretKey getMACKeyFromFile(String filename) throws IOException {
-        byte[] temp = super.readBytesFromFile(filename);
-        return new SecretKeySpec(temp, 0, temp.length, MAC_INSTANCE);
-    }
-
-    /**
-     * Saves MAC-Key to specified SharePrefs, encoded in Base64. The file is only accessible by
-     * your app.
-     * @param spAlias       the alias for the SharedPref
-     * @param keyAlias      the alias under which the key is stored in SharePref
-     * @param secretKey     the MAC-Key to be saved
-     */
-    public void saveMACKeyToSharedPrefBase64(String spAlias, String keyAlias, SecretKey secretKey) {
-        super.saveToSharedPrefBase64(spAlias, keyAlias, secretKey.getEncoded());
-    }
-
-    /**
-     * Retrieves and returns the MAC-Key saved in the specified SharePrefs.
-     * @param spAlias     the alias for the SharedPref
-     * @param keyAlias    the alias under which the key is stored in SharePref
-     * @return            the MAC-Key
-     * @throws CryptoIOHelper.DataNotAvailableException
-     */
-    public SecretKey getMACKeyFromSharedPref(String spAlias, String keyAlias) throws DataNotAvailableException {
-        byte[] temp = super.loadFromSharedPrefBase64(spAlias, keyAlias);
-        return new SecretKeySpec(temp, 0, temp.length, MAC_INSTANCE);
     }
 }

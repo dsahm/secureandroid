@@ -38,15 +38,16 @@ public class CryptoIOHelper {
     private static final int PBE_SALT_LENGTH_BYTE = 64;
     private static final int KEY_LENGTH = 256;
     //private static final int PERFORMANCE_CHECK = 1000;
-    private static final int ITERATION_BASE = 100;
+    private static final int ITERATION_BASE = 1000;
     // For logging
-    private static final String TAG = CryptoIOHelper.class.getSimpleName();
-    private static final String EXC = "Exception";
+//    private static final String TAG = CryptoIOHelper.class.getSimpleName();
+//    private static final String EXC = "Exception";
 
     /**
      * Constructor, sets the context.
      * @param context the context
      */
+    // Public for testing purposes
     public CryptoIOHelper(Context context) {
         this.context = context;
         // Apply Googles pseudo random number generator fix
@@ -59,7 +60,7 @@ public class CryptoIOHelper {
      * @param data  the byte array to be encoded
      * @return      the encoded byte array
      */
-    public byte[] encodeToBase64(byte[] data) {
+    protected byte[] encodeToBase64(byte[] data) {
         return Base64.encode(data, Base64.NO_WRAP);
     }
 
@@ -68,7 +69,7 @@ public class CryptoIOHelper {
      * @param data  the byte array to be encoded
      * @return      the encoded String
      */
-    public String encodeToBase64String(byte[] data) {
+    protected String encodeToBase64String(byte[] data) {
         return Base64.encodeToString(data, Base64.NO_WRAP);
     }
 
@@ -77,6 +78,7 @@ public class CryptoIOHelper {
      * @param data      the Base64-encoded byte array
      * @return          the decoded data as byte array
      */
+    // public for testing purposes
     public byte[] decodeBase64(byte[] data) {
         return Base64.decode(data, Base64.NO_WRAP);
     }
@@ -86,7 +88,7 @@ public class CryptoIOHelper {
      * @param data      the Base64-encoded String
      * @return          the decoded data as byte array
      */
-    public byte[] decodeBase64String(String data) {
+    protected byte[] decodeBase64String(String data) {
         return Base64.decode(data, Base64.NO_WRAP);
     }
 
@@ -95,7 +97,7 @@ public class CryptoIOHelper {
      * @param filename  The filename to be deleted.
      * @throws CryptoIOHelper.DataNotAvailableException
      */
-    public void deleteFile  (String filename) throws DataNotAvailableException {
+    protected void deleteFile  (String filename) throws DataNotAvailableException {
         final String dir = context.getFilesDir().getAbsolutePath();
         final File file = new File(dir, filename);
         final boolean deleted = file.delete();
@@ -108,7 +110,7 @@ public class CryptoIOHelper {
      * Deletes the specified SharedPref file.
      * @param alias     The alias for the SharedPref to be deleted.
      */
-    public void deleteSharedPref(String alias) {
+    protected void deleteSharedPref(String alias) {
         final SharedPreferences sharedPreferences = context.getSharedPreferences(alias, Context.MODE_PRIVATE);
         final SharedPreferences.Editor spEditor = sharedPreferences.edit();
         spEditor.clear();
@@ -120,7 +122,7 @@ public class CryptoIOHelper {
      * @param spAlias   The SharedPreferences alias
      * @param alias     The alias for the file to be deleted.
      */
-    public void deleteFromSharedPref(String spAlias, String alias) {
+    protected void deleteFromSharedPref(String spAlias, String alias) {
         final SharedPreferences sharedPreferences = context.getSharedPreferences(spAlias, Context.MODE_PRIVATE);
         final SharedPreferences.Editor spEditor = sharedPreferences.edit();
         spEditor.remove(alias);
@@ -134,7 +136,7 @@ public class CryptoIOHelper {
      * @param write         the data to be stored
      * @throws IOException
      */
-    public void saveBytesToFileBase64(String filename, byte[] write) throws IOException {
+    protected void saveBytesToFileBase64(String filename, byte[] write) throws IOException {
         final FileOutputStream fos = context.openFileOutput(filename, Context.MODE_PRIVATE);
         fos.write(this.encodeToBase64(write));
         fos.close();
@@ -147,7 +149,7 @@ public class CryptoIOHelper {
      * @return              the data as byte array
      * @throws IOException
      */
-    public byte[] readBytesFromFile(String filename) throws IOException {
+    protected byte[] readBytesFromFile(String filename) throws IOException {
         final FileInputStream fis = context.openFileInput(filename);
         final byte [] buffer = new byte[(int) fis.getChannel().size()];
         fis.read(buffer);
@@ -162,7 +164,7 @@ public class CryptoIOHelper {
      * @param dataAlias   the alias of the data itself
      * @param data        the data as byte array
      */
-    public void saveToSharedPrefBase64(String spAlias, String dataAlias, byte[] data) {
+    protected void saveToSharedPrefBase64(String spAlias, String dataAlias, byte[] data) {
         final SharedPreferences sharedPreferences = context.getSharedPreferences(spAlias, Context.MODE_PRIVATE);
         final SharedPreferences.Editor spEditor = sharedPreferences.edit();
         spEditor.putString(dataAlias, this.encodeToBase64String(data));
@@ -177,7 +179,7 @@ public class CryptoIOHelper {
      * @return              the data as byte array
      * @throws CryptoIOHelper.DataNotAvailableException
      */
-    public byte[] loadFromSharedPrefBase64(String spAlias, String dataAlias) throws DataNotAvailableException {
+    protected byte[] loadFromSharedPrefBase64(String spAlias, String dataAlias) throws DataNotAvailableException {
             final SharedPreferences sharedPreferences = context.getSharedPreferences(spAlias, Context.MODE_PRIVATE);
             String temp = sharedPreferences.getString(dataAlias, null);
             if (temp != null) {
@@ -192,7 +194,7 @@ public class CryptoIOHelper {
      * on the present platform. Returns a LinkedList with the algorithms that are available
      * on the present Platform.
      */
-    public LinkedList<String> providerCheck() {
+    protected LinkedList<String> providerCheck() {
         // List all providers
         LinkedList<String> algorithmList = new LinkedList<String>();
         final Provider[] providers = Security.getProviders();
@@ -214,7 +216,7 @@ public class CryptoIOHelper {
      * @param length    the desired length of the salt (array) in byte
      * @return          the byte array, length bytes long
      */
-    public byte[] generateRandomBytes(int length) {
+    protected byte[] generateRandomBytes(int length) {
         SecureRandom secureRandom = new SecureRandom();
         byte[] random = new byte[length];
         secureRandom.nextBytes(random);
@@ -222,19 +224,10 @@ public class CryptoIOHelper {
     }
 
     /**
-     * Ensures that the PRNG is fixed. Should be used before generating any keys.
-     */
-    private static void fixPrng() {
-        synchronized (PRNGFixes.class) {
-           PRNGFixes.apply();
-        }
-    }
-
-    /**
      * Return pseudo unique ID, USED IN THIS FRAMEWORK AS PASSWORD if USER does not provide one
      * @return ID
      */
-    public String getUniquePsuedoID() {
+    protected String getUniquePsuedoID() {
         // If all else fails, if the user does have lower than API 9 (lower
         // than Gingerbread), has reset their device or 'Secure.ANDROID_ID'
         // returns 'null', then simply the ID returned will be solely based
@@ -300,19 +293,19 @@ public class CryptoIOHelper {
     /**
      * Class to hold a secretkey and the salt the key was generated with
      */
-    public class SaltAndKey {
+    protected class SaltAndKey {
 
         private SecretKey secretKey;
         private byte[] salt;
 
-        public SaltAndKey (SecretKey secretKey, byte[] salt) {
+        protected SaltAndKey (SecretKey secretKey, byte[] salt) {
             this.secretKey = secretKey;
             this.salt = salt;
         }
-        public SecretKey getSecretKey() {
+        protected SecretKey getSecretKey() {
             return secretKey;
         }
-        public byte[] getSalt() {
+        protected byte[] getSalt() {
             return salt;
         }
     }
@@ -324,7 +317,7 @@ public class CryptoIOHelper {
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeySpecException
      */
-    public long hashPerformanceTest(int iterations) throws NoSuchAlgorithmException, InvalidKeySpecException, NoAlgorithmAvailableException {
+    protected long hashPerformanceTest(int iterations, int minIterations) throws NoSuchAlgorithmException, InvalidKeySpecException, NoAlgorithmAvailableException {
         checkPerformanceAlgorithmsLength();
         // Performance check start
         final long startTime = System.currentTimeMillis();
@@ -337,8 +330,11 @@ public class CryptoIOHelper {
         final long stopTime = System.currentTimeMillis();
         final long elapsedTime = stopTime - startTime;
         final long returnIterations = (10000/elapsedTime) * ITERATION_BASE;
-        if (returnIterations < 15000) {
-            return 15000;
+        if (minIterations < 1000) {
+            minIterations = 1000;
+        }
+        if (returnIterations < 3*minIterations) {
+            return 3*minIterations;
         } else {
             return returnIterations;
         }
@@ -356,6 +352,15 @@ public class CryptoIOHelper {
             PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
         } else {
             throw new NoAlgorithmAvailableException(NO_ALG_MSG);
+        }
+    }
+
+    /**
+     * Ensures that the PRNG is fixed. Should be used before generating any keys.
+     */
+    private static void fixPrng() {
+        synchronized (PRNGFixes.class) {
+            PRNGFixes.apply();
         }
     }
 }

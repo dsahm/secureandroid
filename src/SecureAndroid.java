@@ -61,7 +61,7 @@ public class SecureAndroid {
      * @param context The context.
      * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
-    public SecureAndroid(Context context) throws CryptoIOHelper.NoAlgorithmAvailableException, NoSuchAlgorithmException, InvalidKeySpecException {
+    public SecureAndroid(Context context, int minIteratons) throws CryptoIOHelper.NoAlgorithmAvailableException, NoSuchAlgorithmException, InvalidKeySpecException {
         // Instantiate CryptoIOHelper
         cryptoIOHelper = new CryptoIOHelper(context);
         // Prepare iterations
@@ -73,7 +73,7 @@ public class SecureAndroid {
         } catch (CryptoIOHelper.DataNotAvailableException e) {
             // If not, do performance-test
             // Get the suitable iteration count for good performance and security
-            iterations = (int)(cryptoIOHelper.hashPerformanceTest(ITERATION_MIDDLE))/ITERATION_FACTOR;
+            iterations = (int)(cryptoIOHelper.hashPerformanceTest(ITERATION_MIDDLE, minIteratons))/ITERATION_FACTOR;
 //            Log.i("LOADED ITERATION COUNT", String.valueOf(iterations));
         }
         // Instantiate Crypto-classes
@@ -217,37 +217,6 @@ public class SecureAndroid {
         return retrieve(mode, alias, password);
     }
 
-    /**
-     * Private method that returns the data stored under the provided password and alias.
-     * @param mode      The storage mode.
-     * @param alias     The alias.
-     * @param password  The password.
-     * @return          The decrypted data.
-     * @throws GeneralSecurityException
-     * @throws CryptoIOHelper.NoKeyMaterialException
-     * @throws CryptoIOHelper.IntegrityCheckFailedException
-     * @throws CryptoIOHelper.WrongPasswordException
-     * @throws CryptoIOHelper.WrongModeException
-     * @throws IOException
-     * @throws CryptoIOHelper.DataNotAvailableException
-     */
-    private byte[] retrieve(int mode, String alias, char[] password) throws GeneralSecurityException, CryptoIOHelper.NoKeyMaterialException, CryptoIOHelper.IntegrityCheckFailedException,
-            CryptoIOHelper.WrongPasswordException, CryptoIOHelper.WrongModeException, IOException, CryptoIOHelper.DataNotAvailableException {
-        SecretKeys secretKeys;
-        try {
-            secretKeys = getKeyData(password);
-        }
-        catch (CryptoIOHelper.DataNotAvailableException e) {
-            throw new CryptoIOHelper.NoKeyMaterialException(NO_KEYMATERIAL_MSG);
-        }
-        final AESCrypto.CipherIV cipherIv = getUserCipherIv(mode, alias);
-        final byte[] mac = macCrypto.loadMAC(mode, alias);
-        if (macCrypto.checkIntegrity(cipherIv.getCipher(), mac, secretKeys.getMacKey())) {
-            return aesCrypto.decryptAES(cipherIv.getCipher(), cipherIv.getIv(), secretKeys.getAesKey());
-        } else {
-            throw new CryptoIOHelper.IntegrityCheckFailedException(INTEGRITY_CHECK_FAILED);
-        }
-    }
 
     /**
      * Deletes either the SharedPrefs alias entry or the file saved under the alias.
@@ -324,6 +293,38 @@ public class SecureAndroid {
         if (macCrypto.checkIntegrity(cipher, mac, secretKeys.getMacKey())) {
             // if integrity check was successful, return the decrypted plaintext as byte array
             return aesCrypto.decryptAES(cipher, iv, secretKeys.getAesKey());
+        } else {
+            throw new CryptoIOHelper.IntegrityCheckFailedException(INTEGRITY_CHECK_FAILED);
+        }
+    }
+
+    /**
+     * Private method that returns the data stored under the provided password and alias.
+     * @param mode      The storage mode.
+     * @param alias     The alias.
+     * @param password  The password.
+     * @return          The decrypted data.
+     * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.NoKeyMaterialException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.WrongModeException
+     * @throws IOException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     */
+    private byte[] retrieve(int mode, String alias, char[] password) throws GeneralSecurityException, CryptoIOHelper.NoKeyMaterialException, CryptoIOHelper.IntegrityCheckFailedException,
+            CryptoIOHelper.WrongPasswordException, CryptoIOHelper.WrongModeException, IOException, CryptoIOHelper.DataNotAvailableException {
+        SecretKeys secretKeys;
+        try {
+            secretKeys = getKeyData(password);
+        }
+        catch (CryptoIOHelper.DataNotAvailableException e) {
+            throw new CryptoIOHelper.NoKeyMaterialException(NO_KEYMATERIAL_MSG);
+        }
+        final AESCrypto.CipherIV cipherIv = getUserCipherIv(mode, alias);
+        final byte[] mac = macCrypto.loadMAC(mode, alias);
+        if (macCrypto.checkIntegrity(cipherIv.getCipher(), mac, secretKeys.getMacKey())) {
+            return aesCrypto.decryptAES(cipherIv.getCipher(), cipherIv.getIv(), secretKeys.getAesKey());
         } else {
             throw new CryptoIOHelper.IntegrityCheckFailedException(INTEGRITY_CHECK_FAILED);
         }

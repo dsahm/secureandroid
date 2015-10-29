@@ -38,7 +38,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @param iterations The iteration count for hashing.
      * @throws NoAlgorithmAvailableException
      */
-    public AESCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
+    protected AESCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
         // Call superclass
         super(context);
         // Check availability of provoders
@@ -57,7 +57,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @return              the generated AES-Key
      * @throws GeneralSecurityException
      */
-    public SecretKey generateRandomAESKey() throws GeneralSecurityException {
+    protected SecretKey generateRandomAESKey() throws GeneralSecurityException {
         // Instantiante KeyGenerator
         KeyGenerator keyGenerator = KeyGenerator.getInstance(AES_INSTANCE);
         // Initialize generator with the desired keylength
@@ -73,7 +73,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @return              the AES-Key and the salt
      * @throws GeneralSecurityException
      */
-    public SaltAndKey generateRandomAESKeyFromPasswordGetSalt(char[] password) throws GeneralSecurityException {
+    protected SaltAndKey generateRandomAESKeyFromPasswordGetSalt(char[] password) throws GeneralSecurityException {
         // Generate random salt
         final byte [] salt = super.generateRandomBytes(PBE_SALT_LENGTH_BYTE);
         // Specifiy Key parameters
@@ -95,7 +95,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @return              the AES-Key
      * @throws GeneralSecurityException
      */
-    public SecretKey generateAESKeyFromPasswordSetSalt(char[] password, byte[] salt) throws GeneralSecurityException {
+    protected SecretKey generateAESKeyFromPasswordSetSalt(char[] password, byte[] salt) throws GeneralSecurityException {
         // Specifiy Key parameters
         final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, AES_128);
         // Load the key factory with the specified PBE Algorithm
@@ -115,7 +115,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @return              an instance of the class CipherMacIV holding the cipher, iv and mac
      * @throws GeneralSecurityException
      */
-    public CipherIV encryptAES(byte[] plainText, SecretKey secretKey) throws GeneralSecurityException {
+    protected CipherIV encryptAES(byte[] plainText, SecretKey secretKey) throws GeneralSecurityException {
         // Instantiate Cipher with the AES Instance
         final Cipher cipher = Cipher.getInstance(AES_MODE);
         // Generate random bytes for the initialization vector
@@ -139,7 +139,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @return              the plaintext as byte array
      * @throws GeneralSecurityException
      */
-    public byte[] decryptAES(byte[] cipherText, byte[] iv, SecretKey secretKey) throws GeneralSecurityException {
+    protected byte[] decryptAES(byte[] cipherText, byte[] iv, SecretKey secretKey) throws GeneralSecurityException {
         // Instantiate Cipher with the AES Instance and IvParameterSpec with the iv
         final Cipher cipher = Cipher.getInstance(AES_MODE);
         final IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
@@ -156,7 +156,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @param filename      the filename
      * @throws IOException
      */
-    public void writeCipherAndIVToFileBase64(CipherIV data, String filename) throws IOException {
+    protected void writeCipherAndIVToFileBase64(CipherIV data, String filename) throws IOException {
         super.saveBytesToFileBase64(filename + CIPHER_PART, data.getCipher());
         super.saveBytesToFileBase64(filename + IV_PART, data.getIv());
     }
@@ -167,7 +167,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @throws CryptoIOHelper.DataNotAvailableException
      *
      */
-    public void deleteCipherAndIVFile(String filename) throws DataNotAvailableException {
+    protected void deleteCipherAndIVFile(String filename) throws DataNotAvailableException {
         super.deleteFile(filename + CIPHER_PART);
         super.deleteFile(filename + IV_PART);
     }
@@ -179,7 +179,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @return          the CipherIV instance containing the desired cipher and iv
      * @throws IOException
      */
-    public CipherIV getCipherAndIVFromFile(String filename) throws IOException {
+    protected CipherIV getCipherAndIVFromFile(String filename) throws IOException {
         byte[] cipher = super.readBytesFromFile(filename + CIPHER_PART);
         byte[] iv = super.readBytesFromFile(filename + IV_PART);
         return new CipherIV(cipher, iv);
@@ -193,7 +193,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @param spAlias     the alias for the SharedPref
      * @param cipherIvAlias the alias for the ciphertext and iv
      */
-    public void saveCipherAndIVToSharedPrefBase64(CipherIV data, String spAlias, String cipherIvAlias) {
+    protected void saveCipherAndIVToSharedPrefBase64(CipherIV data, String spAlias, String cipherIvAlias) {
         super.saveToSharedPrefBase64(spAlias, cipherIvAlias + CIPHER_PART, data.getCipher());
         super.saveToSharedPrefBase64(spAlias, cipherIvAlias + IV_PART, data.getIv());
     }
@@ -203,7 +203,7 @@ public class AESCrypto extends CryptoIOHelper {
      * @param spAlias           The alias for the Shared Pref.
      * @param cipherIvAlias     The alias for the cipherIv object.
      */
-    public void deleteCipherAndIVFromSharedPref(String spAlias, String cipherIvAlias) {
+    protected void deleteCipherAndIVFromSharedPref(String spAlias, String cipherIvAlias) {
         super.deleteFromSharedPref(spAlias, cipherIvAlias + CIPHER_PART);
         super.deleteFromSharedPref(spAlias, cipherIvAlias+ IV_PART);
     }
@@ -216,9 +216,40 @@ public class AESCrypto extends CryptoIOHelper {
      * @return            the CipherIV instance containing the desired cipher and iv
      * @throws CryptoIOHelper.DataNotAvailableException
      */
-    public CipherIV getCipherAndIVFromSharedPref(String spAlias, String ciphIVAlias) throws DataNotAvailableException {
+    protected CipherIV getCipherAndIVFromSharedPref(String spAlias, String ciphIVAlias) throws DataNotAvailableException {
         byte[] cipher = super.loadFromSharedPrefBase64(spAlias, ciphIVAlias + CIPHER_PART);
         byte[] iv = super.loadFromSharedPrefBase64(spAlias, ciphIVAlias + IV_PART);
+        return new CipherIV(cipher, iv);
+    }
+
+
+    /**
+     * Class to hold a Ciphertext and an Initialization Vector.
+     */
+    protected class CipherIV {
+
+        private byte[] cipher, iv;
+
+        protected CipherIV (byte[] cipher, byte[] iv) {
+            this.cipher = cipher;
+            this.iv = iv;
+        }
+
+        protected byte [] getCipher() {
+            return cipher;
+        }
+        protected byte[] getIv() {
+            return iv;
+        }
+    }
+
+    /**
+     * Returns a CipherIV instance.
+     * @param cipher    The cipher.
+     * @param iv        The iv.
+     * @return          The CipherIV instance.
+     */
+    protected CipherIV instantiateCipherIV (byte[] cipher, byte[] iv) {
         return new CipherIV(cipher, iv);
     }
 
@@ -231,7 +262,7 @@ public class AESCrypto extends CryptoIOHelper {
         if (algorithms.contains("PBKDF2WithHmacSHA256")) {
             PBE_ALGORITHM = "PBKDF2WithHmacSHA256";
         } else if (algorithms.contains("PBKDF2WithHmacSHA1")) {
-                PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
+            PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
         } else {
             throw new NoAlgorithmAvailableException(NO_ALG_MSG);
         }
@@ -245,95 +276,5 @@ public class AESCrypto extends CryptoIOHelper {
         synchronized (PRNGFixes.class) {
             PRNGFixes.apply();
         }
-    }
-
-    /**
-     * Class to hold a Ciphertext and an Initialization Vector.
-     */
-    public class CipherIV {
-
-        private byte[] cipher, iv;
-
-        public CipherIV (byte[] cipher, byte[] iv) {
-            this.cipher = cipher;
-            this.iv = iv;
-        }
-
-        public byte [] getCipher() {
-            return cipher;
-        }
-        public byte[] getIv() {
-            return iv;
-        }
-    }
-
-    /**
-     * Returns a CipherIV instance.
-     * @param cipher    The cipher.
-     * @param iv        The iv.
-     * @return          The CipherIV instance.
-     */
-    public CipherIV instantiateCipherIV (byte[] cipher, byte[] iv) {
-        return new CipherIV(cipher, iv);
-    }
-
-    // Bisher nicht benötigt
-    /**
-     * Generates an AES-Key from the given password with the given kelength. If the keylength is
-     * neither 128 nor 256 Bit, it will be set to 256 Bit.
-     * @param password      the password
-     * @return              the AES-Key
-     * @throws GeneralSecurityException
-     */
-    public SecretKey generateRandomAESKeyFromPassword(char[] password) throws GeneralSecurityException {
-        final KeySpec keySpec = new PBEKeySpec(password, super.generateRandomBytes(PBE_SALT_LENGTH_BYTE), PBE_ITERATIONS, AES_128);
-        final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
-//        final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
-        return keyFactory.generateSecret(keySpec);
-    }
-
-    /**
-     * Stores the given secret key into the specified file, encoded to Base64.
-     * The file is only accessible by your app.
-     * @param secretKey     the secret key to be stored
-     * @param filename      the filename to store the secret key in
-     * @throws IOException
-     */
-    public void storeAESKeyToFileBase64(SecretKey secretKey, String filename) throws IOException {
-        super.saveBytesToFileBase64(filename, secretKey.getEncoded());
-    }
-
-    /**
-     * Retrieves and returns the formerly Base64-encoded AES-Key saved under the specified file.
-     * @param filename      the filename the secret key was stored in
-     * @return              the AES-Key
-     * @throws IOException
-     */
-    public SecretKey getAESKeyFromFileBase64(String filename) throws IOException {
-        byte[] temp = super.readBytesFromFile(filename);
-        return new SecretKeySpec(temp, 0, temp.length, AES_INSTANCE);
-    }
-
-    /**
-     * Stores the given secret key into the apps shared preferences, encoded to Base64.
-     * The SharedPreferences are only accessible by your app.
-     * @param spAlias       the alias of the SharedPref
-     * @param keyAlias      the alias under which the key is to be stored in the SharedPrefs
-     * @param secretKey     the secret key to be stored
-     */
-    public void storeAESKeyInSharedPrefBase64(String spAlias, String keyAlias, SecretKey secretKey) {
-        super.saveToSharedPrefBase64(spAlias, keyAlias, secretKey.getEncoded());
-    }
-
-    /**
-     * Retrieves and returns the formerly Base64-encoded AES-Key saved under the specified SharedPrefs.
-     * @param spAlias       the alias of the Shared Preferences
-     * @param keyAlias      the alias of the key
-     * @return              the AES-Key
-     * @throws CryptoIOHelper.DataNotAvailableException
-     */
-    public SecretKey getAESKeyFromSharedPrefBase64(String spAlias, String keyAlias) throws CryptoIOHelper.DataNotAvailableException {
-        byte[] temp = super.loadFromSharedPrefBase64(spAlias, keyAlias);
-        return new SecretKeySpec(temp, 0, temp.length, AES_INSTANCE);
     }
 }
