@@ -74,14 +74,14 @@ public class SecureAndroid {
             // If not, do performance-test
             // Get the suitable iteration count for good performance and security
             iterations = (int)(cryptoIOHelper.hashPerformanceTest(ITERATION_MIDDLE, minIteratons))/ITERATION_FACTOR;
+            // Save the iteration count
+            cryptoIOHelper.saveToSharedPrefBase64(ITERATION_COUNT_ALIAS, ITERATION_COUNT_ALIAS, String.valueOf(iterations).getBytes());
 //            Log.i("LOADED ITERATION COUNT", String.valueOf(iterations));
         }
         // Instantiate Crypto-classes
         aesCrypto = new AESCrypto(context, iterations);
         passwordCrypto = new PasswordCrypto(context, iterations);
         macCrypto = new MACCrypto(context, iterations);
-        // Save the iteration count
-        cryptoIOHelper.saveToSharedPrefBase64(ITERATION_COUNT_ALIAS, ITERATION_COUNT_ALIAS, String.valueOf(iterations).getBytes());
         // Check and define the MAC length according to the availability of SHA256/1 on the platform
         checkMacLength();
         MACPLUSIV_LENGTH_BYTE = IV_LENGTH_BYTE+MAC_LENGTH_BYTE;
