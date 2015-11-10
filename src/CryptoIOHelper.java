@@ -48,7 +48,7 @@ public class CryptoIOHelper {
      * @param context the context
      */
     // Public for testing purposes
-    public CryptoIOHelper(Context context) {
+    protected CryptoIOHelper(Context context) {
         this.context = context;
         // Apply Googles pseudo random number generator fix
         fixPrng();
@@ -79,7 +79,7 @@ public class CryptoIOHelper {
      * @return          the decoded data as byte array
      */
     // public for testing purposes
-    public byte[] decodeBase64(byte[] data) {
+    protected byte[] decodeBase64(byte[] data) {
         return Base64.decode(data, Base64.NO_WRAP);
     }
 

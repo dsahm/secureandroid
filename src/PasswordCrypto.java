@@ -11,8 +11,10 @@ import javax.crypto.spec.PBEKeySpec;
 
 public class PasswordCrypto extends CryptoIOHelper {
 
-    // Message if no suitable algorithm available
+    // Messages
     private static final String NO_ALG_MSG = "No algorithm available on this platform";
+    private static final String NO_KEY_MAT_MSG = "Propably no key material saved formerly";
+
     // For storage
     private String SALT_PART = "salt";
     private String HASH_PART = "hash";
@@ -187,11 +189,29 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @param passwordAlias     The alias for the hashed password.
      * @param saltAlias         The alias for the salt.
      * @return                  The HashedPasswordAndSalt object.
-     * @throws                  CryptoIOHelper.DataNotAvailableException
+     * @throws                  dsahm.Crypto.CryptoIOHelper.NoKeyMaterialException
      */
     protected HashedPasswordAndSalt getHashedPasswordAndSaltSharedPref(String spAlias, String passwordAlias, String saltAlias) throws DataNotAvailableException {
         return new HashedPasswordAndSalt(getHashFromSharedPref(spAlias, passwordAlias), getSaltFromSharedPref(spAlias, saltAlias));
     }
+
+//    /**
+//     * Returns the HashedPasswordAndSalt object saved under the specified aliases in the SharedPreferences.
+//     * @param spAlias           The alias for the SharePreferences.
+//     * @param passwordAlias     The alias for the hashed password.
+//     * @param saltAlias         The alias for the salt.
+//     * @return                  The HashedPasswordAndSalt object.
+//     * @throws                  dsahm.Crypto.CryptoIOHelper.NoKeyMaterialException
+//     */
+//    protected HashedPasswordAndSalt getHashedPasswordAndSaltSharedPref(String spAlias, String passwordAlias, String saltAlias) throws NoKeyMaterialException {
+//        HashedPasswordAndSalt hashedPasswordAndSalt;
+//        try {
+//            hashedPasswordAndSalt = new HashedPasswordAndSalt(getHashFromSharedPref(spAlias, passwordAlias), getSaltFromSharedPref(spAlias, saltAlias));
+//        } catch (DataNotAvailableException e) {
+//            throw new NoKeyMaterialException(NO_KEY_MAT_MSG);
+//        }
+//        return hashedPasswordAndSalt;
+//    }
 
     /**
      * Stores the HashedPasswordAndSalt object in the specified file.

@@ -6,6 +6,8 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.LinkedList;
+
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -31,6 +33,8 @@ public class AESCrypto extends CryptoIOHelper {
     // For Storage
     private static final String CIPHER_PART = "cipher";
     private static final String IV_PART = "iv";
+    // Exception messages
+    private static final String WRONG_INTEGRITY_MODE = "Bad Padding. Possible reason: Wrong integrity mode";
 
     /**
      * Constructor for AESCrypto Class. Sets the context of the superclass.
@@ -146,7 +150,11 @@ public class AESCrypto extends CryptoIOHelper {
         // Initialize cipher with the desired parameters
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
         // Return plaintext
-        return cipher.doFinal(cipherText);
+        try {
+            return cipher.doFinal(cipherText);
+        } catch (BadPaddingException e) {
+            throw new BadPaddingException(WRONG_INTEGRITY_MODE);
+        }
     }
 
     /**
