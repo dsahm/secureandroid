@@ -93,8 +93,9 @@ If you set a high minimum count that negatively affects your performance, you co
 <span class="pl-c">// Decrypt the string</span>
 <span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, sc<span class="pl-k">.</span>decrypt(ciphertext), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>));</pre></div>
 
-<p>All key handling and cryptographic operations are done transparently. When the encrypt and decrypt methods are called, SecureAndroid uses an auto-generated password that is device specific. That password is not stored on the device but can be read from it when someone else gets his hands on it. 
-Note: To switch off integrity-checking of your data, you can pass the flag</p>
+<p>All key handling and cryptographic operations are done transparently. When the encrypt and decrypt methods are called, SecureAndroid uses an auto-generated password that is device specific. That password is not stored on the device but can be read from it when someone else gets his hands on it. </p>
+
+<p>Note: To switch off integrity-checking of your data, you can pass the flag</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>NO_INTEGRITY</span></pre></div>
 
@@ -117,8 +118,9 @@ Note: To switch off integrity-checking of your data, you can pass the flag</p>
 <h3>
 <a id="encryptandstoreretrieve" class="anchor" href="#encryptandstoreretrieve" aria-hidden="true"><span class="octicon octicon-link"></span></a>encryptAndStore/retrieve</h3>
 
-<p>SecureAndroid does not only provide you with methods to simply encrypt and decrypt binary data that you can then handle yourself but also with methods to encrypt and directly store data. This abstracts i/o-operations. You simply have to remember the alias under which you want the data to be stored. Again, with the encryptAndStore/retrieve methods an auto-generated password is used. You can choose whether you want to store the data in the SharedPreferences or in a file with the MODE flag-option: SecureAndroid.Mode.FILE or SecureAndroid.Mode.SHARED_PREFERENCES. 
-Note: If you want to store larger binary data the use of FILE should be preferred.</p>
+<p>SecureAndroid does not only provide you with methods to simply encrypt and decrypt binary data that you can then handle yourself but also with methods to encrypt and directly store data. This abstracts i/o-operations away. You simply have to remember the alias under which you want the data to be stored. Again, with the encryptAndStore/retrieve methods an auto-generated password is used. You can choose whether you want to store the data in the SharedPreferences or in a file with the MODE flag-option: SecureAndroid.Mode.FILE or SecureAndroid.Mode.SHARED_PREFERENCES. </p>
+
+<p>Note: If you want to store larger binary data the use of FILE should be preferred.</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string and store it under the given alias in FILE mode</span>
 sc<span class="pl-k">.</span>encryptAndStore(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, <span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Mode</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>);
@@ -146,8 +148,7 @@ sc<span class="pl-k">.</span>wipeKey();</pre></div>
 <h3>
 <a id="deletedata" class="anchor" href="#deletedata" aria-hidden="true"><span class="octicon octicon-link"></span></a>deleteData</h3>
 
-<p>If you want to delete a specific file or a shared pref
-erence you can do that by calling:</p>
+<p>If you want to delete a specific file or a something stored in the SharedPreferences you can do that by calling:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Delete specific data</span>
 sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Mode</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>);
@@ -157,7 +158,7 @@ sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span
 <h3>
 <a id="exceptions" class="anchor" href="#exceptions" aria-hidden="true"><span class="octicon octicon-link"></span></a>Exceptions</h3>
 
-<p>Note that SecureAndroid will throw some useful exceptions if something wrong, for example if the wrong password was provided or you want to retrieve data that does not exist. See the javadocs for details.</p>
+<p>Note that SecureAndroid will throw some useful exceptions if something went wrong, for example if the wrong password was provided or you want to retrieve data that does not exist. See the javadocs for details.</p>
 
 <h3>
 <a id="how-does-it-work-under-the-hood" class="anchor" href="#how-does-it-work-under-the-hood" aria-hidden="true"><span class="octicon octicon-link"></span></a>How does it work under the hood?</h3>
@@ -167,15 +168,15 @@ sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span
 <h3>
 <a id="what-password-is-used-for-deriving-the-master-keys" class="anchor" href="#what-password-is-used-for-deriving-the-master-keys" aria-hidden="true"><span class="octicon octicon-link"></span></a>What password is used for deriving the master-keys?</h3>
 
-<p>If you simply use the encrypt and decrypt-methods an automatic password is generated and then fed into the PBKDF2. That password is a hash of device information and therefore bound to a device. <em>That means you cannot decrypt something only on the device it was encrypted with</em>. </p>
+<p>If you simply use the encrypt and decrypt-methods an automatic password is generated and then fed into the PBKDF2. That password is a hash of device information and therefore bound to a device. <em>That means you cannot decrypt data on another device than the data was encrypted with</em>. </p>
 
-<p>If you provide a password yourself or ask the user to provide one, that passphrase then is used to derive the keys. The intermediate keys are generated on the <em>first encryption operation</em>. In all subsequent encryption- or decryption processes these intermediate keys are use. 
+<p>If you provide a password yourself or ask the user to provide one, that passphrase then is used to derive the keys. The intermediate keys are generated on the <em>first encryption operation</em>. In all subsequent encryption- or decryption processes these intermediate keys are used. 
 <em>Note</em>: If you use SecureAndroid in an app, this means that the key-material will be deleted on app-deletion because it is stored in the apps SharedPreferences. If data should survive an app-uninstallation, you must provide that mechanism.</p>
 
 <h3>
 <a id="where-is-data-stored" class="anchor" href="#where-is-data-stored" aria-hidden="true"><span class="octicon octicon-link"></span></a>Where is data stored?</h3>
 
-<p>All key material is stored in the SharedPreferences of the app that you are using SecureAndroid with. The encrypted data is stored either in the SharedPreferences or in a file, according the mode-flag (see Javadocs or explanation above).</p>
+<p>All key material is stored in the SharedPreferences of the app that you are using SecureAndroid with. The encrypted data is stored either in the SharedPreferences or in a file, according the MODE flag (see Javadocs or explanation above).</p>
       </section>
     </div>
     <footer>
