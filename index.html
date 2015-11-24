@@ -1,36 +1,32 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-
   <head>
-    <meta charset='utf-8'>
+    <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="SecureAndroid : A small library for encrypting and storing data securely on Android devices.">
+    <title>SecureAndroid by dsahm</title>
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
-    <title>SecureAndroid</title>
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
   </head>
-
   <body>
-
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/dsahm/secureandroid">View on GitHub</a>
-
-          <h1 id="project_title">SecureAndroid</h1>
-          <h2 id="project_tagline">A small library for encrypting and storing data securely on Android devices.</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/dsahm/secureandroid/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/dsahm/secureandroid/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
+    <div class="wrapper">
+      <header>
+        <h1>SecureAndroid</h1>
+        <p>A small library for encrypting and storing data securely on Android devices.</p>
+        <p class="view"><a href="https://github.com/dsahm/secureandroid">View the Project on GitHub <small>dsahm/secureandroid</small></a></p>
+        <ul>
+          <li><a href="https://github.com/dsahm/secureandroid/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/dsahm/secureandroid/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/dsahm/secureandroid">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
         <h3>
 <a id="welcome-to-secureandroid" class="anchor" href="#welcome-to-secureandroid" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome to SecureAndroid</h3>
 
@@ -78,8 +74,8 @@ SecureAndroid abstracts cryptographic implementation details and i/o-operations 
     <span class="pl-c">// Try it out to see the specific exceptions..and do smth</span>
 }</pre></div>
 
-<p>You must pass a Context and the minimum iterations for Password-Based-Key-Derivation to the constructor. For more information on the iteration count, visit <a href="https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet">OWASP</a>. SecureAndroid tunes the iterations automatically so that users will have to wait for about 1000ms when encrypting oder decrypting data. So you need to only think about the minimum iteration count if there really is a minimum that is important to you. Otherwise, simply pass 0. 
-If you set a high minimum count that negatively affects your performance, you could - as far as that is possible in the data-flow of your app - use AsyncTasks or Handlers to perform encryption and decryption in the background. </p>
+<p>You must pass a Context and the minimum iterations for Password-Based-Key-Derivation to the constructor. For more information on the iteration count, visit <a href="https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet">OWASP</a>. SecureAndroid tunes the iterations automatically so that users will have to wait for about 500ms when encrypting or decrypting data. So you need to only think about the minimum iteration count if there really is a minimum that is important to you. Otherwise, simply pass 0. 
+If you set a high minimum count that negatively affects your performance, you could - as far as that is possible in the data-flow of your app - use AsyncTasks or libraries like RxJava (highly recommended!) to perform encryption and decryption in the background. Another option to achieve better performance is to switch the integrity check of the data off. More on that later.</p>
 
 <h3>
 <a id="the-api" class="anchor" href="#the-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>The API</h3>
@@ -92,11 +88,20 @@ If you set a high minimum count that negatively affects your performance, you co
 <p>Lets start with simply encrypting and decrypting some data, for example a string:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string</span>
-<span class="pl-k">byte</span>[] ciphertext <span class="pl-k">=</span> sc<span class="pl-k">.</span>encrypt(<span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>));
+<span class="pl-k">byte</span>[] ciphertext <span class="pl-k">=</span> sc<span class="pl-k">.</span>encrypt(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, <span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>));
 <span class="pl-c">// Decrypt the string</span>
-<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>decrypt(ciphertext), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>));</pre></div>
+<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, sc<span class="pl-k">.</span>decrypt(ciphertext), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>));</pre></div>
 
-<p>All key handling and cryptographic operations are done transparently. When the encrypt and decrypt methods are called, SecureAndroid uses an auto-generated password that is device specific. That password is not stored on the device but can be read from it when someone else gets his hands on it. </p>
+<p>All key handling and cryptographic operations are done transparently. When the encrypt and decrypt methods are called, SecureAndroid uses an auto-generated password that is device specific. That password is not stored on the device but can be read from it when someone else gets his hands on it. 
+Note: To switch off integrity-checking of your data, you can pass the flag</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>NO_INTEGRITY</span></pre></div>
+
+<p>instead of</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span></pre></div>
+
+<p>. This will give you a ~30% performance-boost.</p>
 
 <h3>
 <a id="encryptwithpassworddecryptwithpassword" class="anchor" href="#encryptwithpassworddecryptwithpassword" aria-hidden="true"><span class="octicon octicon-link"></span></a>encryptWithPassword/decryptWithPassword</h3>
@@ -104,20 +109,20 @@ If you set a high minimum count that negatively affects your performance, you co
 <p>So, while the auto-password option is good if you simply want to add a layer of security to your app, if the data to be encrypted is very sensitive, you should provide a password yourself. For example, you could ask the user for a passphrase and then use SecureAndroid like this:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string with a given password</span>
-<span class="pl-k">byte</span>[] ciphertext <span class="pl-k">=</span> sc<span class="pl-k">.</span>encryptWithPassword(<span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray());
+<span class="pl-k">byte</span>[] ciphertext <span class="pl-k">=</span> sc<span class="pl-k">.</span>encryptWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, <span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray());
 <span class="pl-c">// Decrypt the string with the password</span>
-<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>decryptWithPassword(ciphertext, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray()), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
+<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>decryptWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, ciphertext, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray()), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
 
 <h3>
 <a id="encryptandstoreretrieve" class="anchor" href="#encryptandstoreretrieve" aria-hidden="true"><span class="octicon octicon-link"></span></a>encryptAndStore/retrieve</h3>
 
-<p>SecureAndroid does not only provide you with methods to simply encrypt and decrypt binary data that you can then handle yourself but also with methods to encrypt and directly store data. This abstracts i/o-operations. You simply have to remember the alias under which you want the data to be stored. Again, with the encryptAndStore/retrieve methods an auto-generated password is used. You can choose whether you want to store the data in the SharedPreferences or in a file with the MODE flag-option: SecureAndroid.FILE or SecureAndroid.SHARED_PREFERENCES. 
+<p>SecureAndroid does not only provide you with methods to simply encrypt and decrypt binary data that you can then handle yourself but also with methods to encrypt and directly store data. This abstracts i/o-operations. You simply have to remember the alias under which you want the data to be stored. Again, with the encryptAndStore/retrieve methods an auto-generated password is used. You can choose whether you want to store the data in the SharedPreferences or in a file with the MODE flag-option: SecureAndroid.Mode.FILE or SecureAndroid.Mode.SHARED_PREFERENCES. 
 Note: If you want to store larger binary data the use of FILE should be preferred.</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string and store it under the given alias in FILE mode</span>
-sc<span class="pl-k">.</span>encryptAndStore(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>);
+sc<span class="pl-k">.</span>encryptAndStore(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, <span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Mode</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>);
 <span class="pl-c">// Retrieve the string</span>
-<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>retrieve(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
+<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>retrieve(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, <span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Mode</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
 
 <h3>
 <a id="encryptandstorewithpasswordretrievewithpassword" class="anchor" href="#encryptandstorewithpasswordretrievewithpassword" aria-hidden="true"><span class="octicon octicon-link"></span></a>encryptAndStoreWithPassword/retrieveWithPassword</h3>
@@ -125,9 +130,9 @@ sc<span class="pl-k">.</span>encryptAndStore(<span class="pl-smi">SecureAndroid<
 <p>The encryptAndStoreWithPassword and retrieveWithPassword methods provide the same functionality as the above methods only that you can provide your own password. See # encryptWithPassword.</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt a string with password and store it under the given alias in FILE mode</span>
-sc<span class="pl-k">.</span>encryptAndStoreWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray());
+sc<span class="pl-k">.</span>encryptAndStoreWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, <span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Mode</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>mystring<span class="pl-pds">"</span></span><span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>), <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray());
 <span class="pl-c">// Retrieve</span>
-<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>retrieveWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray()), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
+<span class="pl-smi">String</span> mystring <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">String</span>(sc<span class="pl-k">.</span>retrieveWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>INTEGRITY</span>, <span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Mode</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>mypassword<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray()), <span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>);</pre></div>
 
 <h3>
 <a id="wipekey" class="anchor" href="#wipekey" aria-hidden="true"><span class="octicon octicon-link"></span></a>wipeKey</h3>
@@ -144,8 +149,8 @@ sc<span class="pl-k">.</span>wipeKey();</pre></div>
 erence you can do that by calling:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-c">// Delete specific data</span>
-sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>);
-sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span><span class="pl-c1"><span class="pl-k">.</span>SHARED_PREFERENCES</span>, <span class="pl-s"><span class="pl-pds">"</span>another_data_alias<span class="pl-pds">"</span></span>);
+sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Mode</span><span class="pl-c1"><span class="pl-k">.</span>FILE</span>, <span class="pl-s"><span class="pl-pds">"</span>data_alias<span class="pl-pds">"</span></span>);
+sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Mode</span><span class="pl-c1"><span class="pl-k">.</span>SHARED_PREFERENCES</span>, <span class="pl-s"><span class="pl-pds">"</span>another_data_alias<span class="pl-pds">"</span></span>);
 </pre></div>
 
 <h3>
@@ -172,16 +177,11 @@ sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span
 <p>All key material is stored in the SharedPreferences of the app that you are using SecureAndroid with. The encrypted data is stored either in the SharedPreferences or in a file, according the mode-flag (see Javadocs or explanation above).</p>
       </section>
     </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">SecureAndroid maintained by <a href="https://github.com/dsahm">dsahm</a></p>
-        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
-
+    <footer>
+      <p>Project maintained by <a href="https://github.com/dsahm">dsahm</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
     
-
   </body>
 </html>
