@@ -19,6 +19,7 @@ import java.security.spec.KeySpec;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -34,59 +35,61 @@ public class CryptoIOHelper {
     private static final String NO_ALG_MSG = "No algorithm available on this platform";
     // Variables for performance test
     private static String PBE_ALGORITHM;
-    //private static int PBE_ITERATIONS;
     private static final int PBE_SALT_LENGTH_BYTE = 64;
     private static final int KEY_LENGTH = 256;
-    //private static final int PERFORMANCE_CHECK = 1000;
     private static final int ITERATION_BASE = 1000;
-    // For logging
-//    private static final String TAG = CryptoIOHelper.class.getSimpleName();
-//    private static final String EXC = "Exception";
+    // For PRNG-Fix
+    private static AtomicBoolean prng;
+
 
     /**
      * Constructor, sets the context.
-     * @param context the context
+     *
+     * @param context The context.
      */
-    // Public for testing purposes
-    protected CryptoIOHelper(Context context) {
+    protected CryptoIOHelper (Context context) {
         this.context = context;
         // Apply Googles pseudo random number generator fix
+        prng = new AtomicBoolean(false);
         fixPrng();
-        //For performance test
     }
 
     /**
-     * Encodes the given byte array to a Base64 byted array
-     * @param data  the byte array to be encoded
-     * @return      the encoded byte array
+     * Encodes the given byte array to a Base64 byte array.
+     *
+     * @param data  The byte array to be encoded.
+     * @return      The encoded byte array.
      */
     protected byte[] encodeToBase64(byte[] data) {
         return Base64.encode(data, Base64.NO_WRAP);
     }
 
     /**
-     * Encodes the given byte array to a Base64-String
-     * @param data  the byte array to be encoded
-     * @return      the encoded String
+     * Encodes the given byte array to a Base64-String.
+     *
+     * @param data  The byte array to be encoded.
+     * @return      The encoded String.
      */
     protected String encodeToBase64String(byte[] data) {
         return Base64.encodeToString(data, Base64.NO_WRAP);
     }
 
     /**
-     * Decodes the given Base64-encoded byte array
-     * @param data      the Base64-encoded byte array
-     * @return          the decoded data as byte array
+     * Decodes the given Base64-encoded byte array.
+     *
+     * @param data      The Base64-encoded byte array.
+     * @return          The decoded data as byte array.
      */
     // public for testing purposes
-    protected byte[] decodeBase64(byte[] data) {
+    public byte[] decodeBase64(byte[] data) {
         return Base64.decode(data, Base64.NO_WRAP);
     }
 
     /**
-     * Decodes the given Base64-encoded String
-     * @param data      the Base64-encoded String
-     * @return          the decoded data as byte array
+     * Decodes the given Base64-encoded String.
+     *
+     * @param data      The Base64-encoded String.
+     * @return          The decoded data as byte array.
      */
     protected byte[] decodeBase64String(String data) {
         return Base64.decode(data, Base64.NO_WRAP);
@@ -94,6 +97,7 @@ public class CryptoIOHelper {
 
     /**
      * Deletes the specified file.
+     *
      * @param filename  The filename to be deleted.
      * @throws CryptoIOHelper.DataNotAvailableException
      */
@@ -108,6 +112,7 @@ public class CryptoIOHelper {
 
     /**
      * Deletes the specified SharedPref file.
+     *
      * @param alias     The alias for the SharedPref to be deleted.
      */
     protected void deleteSharedPref(String alias) {
@@ -119,7 +124,8 @@ public class CryptoIOHelper {
 
     /**
      * Deletes the alias from specified SharedPref file.
-     * @param spAlias   The SharedPreferences alias
+     *
+     * @param spAlias   The SharedPreferences alias.
      * @param alias     The alias for the file to be deleted.
      */
     protected void deleteFromSharedPref(String spAlias, String alias) {
@@ -132,8 +138,9 @@ public class CryptoIOHelper {
     /**
      * Saves byte array to the specified file in the app folder, encodes the bytes to Base64
      * before writing. The file will only be accessible to your app.
-     * @param filename      the filename under which the data should be stored
-     * @param write         the data to be stored
+     *
+     * @param filename      The filename under which the data should be stored.
+     * @param write         The data to be stored.
      * @throws IOException
      */
     protected void saveBytesToFileBase64(String filename, byte[] write) throws IOException {
@@ -144,9 +151,10 @@ public class CryptoIOHelper {
 
     /**
      * Reads a formerly saved byte array from the given file in the app folder,
-     * must have been Base64-encoded
-     * @param filename      the filename
-     * @return              the data as byte array
+     * must have been Base64-encoded.
+     *
+     * @param filename      The filename.
+     * @return              The data as byte array.
      * @throws IOException
      */
     protected byte[] readBytesFromFile(String filename) throws IOException {
@@ -160,9 +168,10 @@ public class CryptoIOHelper {
     /**
      * Saves data as Base64-encoded String in the app's SharedPreferences. Will only
      * be accessible by your app.
-     * @param spAlias     the alias under which the SharedPref is to be stored
-     * @param dataAlias   the alias of the data itself
-     * @param data        the data as byte array
+     *
+     * @param spAlias     The alias under which the SharedPref is to be stored.
+     * @param dataAlias   The alias of the data itself.
+     * @param data        The data as byte array.
      */
     protected void saveToSharedPrefBase64(String spAlias, String dataAlias, byte[] data) {
         final SharedPreferences sharedPreferences = context.getSharedPreferences(spAlias, Context.MODE_PRIVATE);
@@ -174,9 +183,10 @@ public class CryptoIOHelper {
     /**
      * Reads the data saved under the specified alias. Data must have been saved
      * Base64-encoded.
-     * @param spAlias       the alias under which the SharePref was stored
-     * @param dataAlias     the alias of the data itself
-     * @return              the data as byte array
+     *
+     * @param spAlias       The alias under which the SharePref was stored.
+     * @param dataAlias     The alias of the data itself.
+     * @return              The data as byte array.
      * @throws CryptoIOHelper.DataNotAvailableException
      */
     protected byte[] loadFromSharedPrefBase64(String spAlias, String dataAlias) throws DataNotAvailableException {
@@ -202,7 +212,6 @@ public class CryptoIOHelper {
 //            Log.i("CRYPTO", "provider: " + provider.getName());
             final Set<Provider.Service> services = provider.getServices();
             for (Provider.Service service : services) {
-                //if (provider.getName().equalsIgnoreCase("AndroidOpenSSL"))
 //                Log.i("CRYPTO", "  algorithm: " + service.getAlgorithm());
                 algorithmList.add(service.getAlgorithm());
             }
@@ -213,10 +222,12 @@ public class CryptoIOHelper {
     /**
      * Generates a random byte array that can be used as a salt or for any
      * other similar purpose.
-     * @param length    the desired length of the salt (array) in byte
-     * @return          the byte array, length bytes long
+     *
+     * @param length    The desired length of the salt (array) in byte.
+     * @return          The byte array, length bytes long.
      */
     protected byte[] generateRandomBytes(int length) {
+        fixPrng();
         SecureRandom secureRandom = new SecureRandom();
         byte[] random = new byte[length];
         secureRandom.nextBytes(random);
@@ -268,10 +279,6 @@ public class CryptoIOHelper {
         public NoAlgorithmAvailableException (String message) {
             super(message); }
     }
-    public static class WrongModeException extends Exception{
-        public WrongModeException (String message) {
-            super(message); }
-    }
     public static class WrongPasswordException extends Exception {
         public WrongPasswordException (String message) {
             super(message); }
@@ -289,6 +296,7 @@ public class CryptoIOHelper {
             super(message);
         }
     }
+
 
     /**
      * Class to hold a secretkey and the salt the key was generated with
@@ -312,10 +320,13 @@ public class CryptoIOHelper {
 
     /**
      * Checks the performance of the device when running PBKD.
-     * @param iterations The iteraions.
-     * @return  True if a certain threshhold (PERFORMANCE_CHECK) has been eclipsed, False otherwise.
+     *
+     * @param iterations The iterations used for first performance check
+     * @param minIterations Minimum iterations.
+     * @return The optimal iteration count for good performance.
      * @throws NoSuchAlgorithmException
      * @throws InvalidKeySpecException
+     * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
     protected long hashPerformanceTest(int iterations, int minIterations) throws NoSuchAlgorithmException, InvalidKeySpecException, NoAlgorithmAvailableException {
         checkPerformanceAlgorithmsLength();
@@ -329,6 +340,7 @@ public class CryptoIOHelper {
         // Performance check
         final long stopTime = System.currentTimeMillis();
         final long elapsedTime = stopTime - startTime;
+        Log.i("elapsed time", String.valueOf(elapsedTime));
         final long returnIterations = (10000/elapsedTime) * ITERATION_BASE;
         if (minIterations < 1000) {
             minIterations = 1000;
@@ -342,6 +354,7 @@ public class CryptoIOHelper {
 
     /**
      * Checks whether a suitable algorithm for PBKD is available.
+     *
      * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
     private void checkPerformanceAlgorithmsLength() throws CryptoIOHelper.NoAlgorithmAvailableException {
@@ -359,8 +372,13 @@ public class CryptoIOHelper {
      * Ensures that the PRNG is fixed. Should be used before generating any keys.
      */
     private static void fixPrng() {
-        synchronized (PRNGFixes.class) {
-            PRNGFixes.apply();
+        if (!prng.get()) {
+            synchronized (PRNGFixes.class) {
+                if (!prng.get()) {
+                    PRNGFixes.apply();
+                    prng.set(true);
+                }
+            }
         }
     }
 }

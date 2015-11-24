@@ -1,6 +1,7 @@
 package my.secureandroid;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -8,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -28,33 +30,39 @@ public class MACCrypto extends CryptoIOHelper {
     private static final int PBE_SALT_LENGTH_BYTE = 64;
     private static int PBE_ITERATIONS;
     // Constants
-    private static final String MAC_ALIAS = "SecureAndroid.MacIv.Alias";
+    private static final String MAC_ALIAS = "SecureAndroid.MACIv.Alias";
     // Exception messages
-    private static final String WRONG_MODE_EXCEPTION = "Wrong mode, choose SecureAndroid.FILE or SecureAndroid.SHARED_PREFERENCES";
+    private static final String WRONG_MODE_EXCEPTION = "Wrong mode, choose SecureAndroid.Mode.FILE or SecureAndroid.Mode.SHARED_PREFERENCES";
+    // For PRNG-Fix
+    private static AtomicBoolean prng = new AtomicBoolean(false);
 
     /**
      * Constructor for MACCrypto Class. Sets the context of the superclass.
+     *
      * @param context The context.
-     * @param iterations The iteration count for hashing.
+     * @param iterations The iteration count for hashing/PBDKF.
      * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
     protected MACCrypto(Context context, int iterations) throws NoAlgorithmAvailableException {
         // Call superclass
         super(context);
         // Check provider availability
-        providerCheckMacCrypto();
+        providerCheckMACCrypto();
         // Apply Googles pseudo random number generator fix for API-Level 16-18
+        prng = new AtomicBoolean(false);
         fixPrng();
         // set the iteration count
         PBE_ITERATIONS = iterations;
     }
 
     /**
-     * Generates and returns a 128-Bit long Mac-Key.
-     * @return              The generated Mac-Key
+     * Generates and returns a 128 Bit long MAC-Key.
+     *
+     * @return              The generated MAC-Key.
      * @throws              NoSuchAlgorithmException
      */
-    protected SecretKey generateMacKey() throws NoSuchAlgorithmException{
+    protected SecretKey generateRandomMACKey() throws NoSuchAlgorithmException{
+        fixPrng();
         KeyGenerator keyGenerator;
         keyGenerator = KeyGenerator.getInstance(MAC_ALGORITHM);
         keyGenerator.init(MAC_128);
@@ -63,87 +71,92 @@ public class MACCrypto extends CryptoIOHelper {
 
     /**
      * Method to generate a Message Authentication Code.
-     * @param cipher    the ciphertext for which the mac should be generated
-     * @param macKey    the secret key for the mac generation
-     * @return          mac as byte array
+     *
+     * @param cipher    The ciphertext for which the mac should be generated.
+     * @param macKey    The secret key for the mac generation.
+     * @return          MAC as byte array.
      * @throws GeneralSecurityException
      */
-    protected byte[] generateMac(byte[] cipher, SecretKey macKey) throws GeneralSecurityException {
+    protected byte[] generateMAC(byte[] cipher, SecretKey macKey) throws GeneralSecurityException {
         final Mac mac = Mac.getInstance(MAC_ALGORITHM);
         mac.init(macKey);
         return mac.doFinal(cipher);
     }
 
     /**
-     * Generates a MAC-Key from the given password with the given kelength. If the keylength is
-     * not 128 Bit, it will be set to 128 Bit.
-     * @param password      the password
-     * @return              the SaltAndKey object
+     * Generates a MAC-Key from the given password.
+     *
+     * @param password      The password.
+     * @return              The SaltAndKey object.
      * @throws GeneralSecurityException
      */
-    protected SaltAndKey generateRandomMacKeyFromPasswordGetSalt(char[] password) throws GeneralSecurityException {
+    protected SaltAndKey generateRandomMACKeyFromPasswordGetSalt(char[] password) throws GeneralSecurityException {
+        fixPrng();
         final byte[] salt = super.generateRandomBytes(PBE_SALT_LENGTH_BYTE);
         final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, MAC_128);
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
         final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
         return new SaltAndKey(new SecretKeySpec(temp, MAC_INSTANCE), salt);
-//        return new SaltAndKey(keyFactory.generateSecret(keySpec), salt);
     }
 
     /**
-     * Returns the Secret-MAC key generated with the specified salt value and the password.
+     * Returns the Secret-MAC key generated with the specified salt value and password.
+     *
      * @param password      The password used to derive the key.
      * @param salt          The salt used to derive the key.
      * @return              The secret MAC-Key.
      * @throws GeneralSecurityException
      */
-    protected SecretKey generateMacKeyFromPasswordSetSalt(char[] password, byte[] salt) throws GeneralSecurityException {
+    protected SecretKey generateRandomMACKeyFromPasswordSetSalt(char[] password, byte[] salt) throws GeneralSecurityException {
+        fixPrng();
         final KeySpec keySpec = new PBEKeySpec(password, salt , PBE_ITERATIONS, MAC_128);
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
         final byte[] temp = keyFactory.generateSecret(keySpec).getEncoded();
         return new SecretKeySpec(temp, MAC_INSTANCE);
-//        return keyFactory.generateSecret(keySpec);
     }
 
     /**
+     * Method to load a MAC.
      *
-     * @param mode      The mode for storage, choose SecureAndroid.SHARED_PREFERENCES or
-     *                  SecureAndroid.FILE.
+     * @param mode      The mode for storage, choose SecureAndroid.Mode.SHARED_PREFERENCES or FILE.
      * @param alias     The alias for SharedPref or the file.
      * @return          The MAC.
      * @throws IOException
-     * @throws CryptoIOHelper.WrongModeException
+     * @throws IllegalArgumentException
      * @throws CryptoIOHelper.DataNotAvailableException
      */
-    protected byte[] loadMAC(int mode, String alias) throws IOException, CryptoIOHelper.WrongModeException, CryptoIOHelper.DataNotAvailableException {
-        if (mode == SecureAndroid.SHARED_PREFERENCES) {
-            return super.loadFromSharedPrefBase64(MAC_ALIAS, alias);
-        } else if (mode == SecureAndroid.FILE) {
-            return super.readBytesFromFile(alias);
-        } else {
-            throw new CryptoIOHelper.WrongModeException(WRONG_MODE_EXCEPTION);
+    protected byte[] loadMAC(SecureAndroid.Mode mode, String alias) throws IOException, CryptoIOHelper.DataNotAvailableException {
+        switch (mode) {
+            case SHARED_PREFERENCES:
+                return super.loadFromSharedPrefBase64(MAC_ALIAS, alias);
+            case FILE:
+                return super.readBytesFromFile(alias);
+            default:
+                throw new IllegalArgumentException(WRONG_MODE_EXCEPTION);
         }
     }
 
     /**
      * Method the check the integrity of the given ciphertext against the given MAC with
-     * the given Secretkey
-     * @param cipherText    the ciphertext to be checked
-     * @param mac           the Message Authentication code against which to check
-     * @param macKey        the secretkey
-     * @return              true if check was successful, false otherwise
+     * the given SecretKey.
+     *
+     * @param cipherText    The ciphertext to be checked.
+     * @param mac           The Message Authentication code against which to check.
+     * @param macKey        The SecretKey.
+     * @return              True if check was successful, false otherwise.
      * @throws GeneralSecurityException
      */
     protected boolean checkIntegrity(byte[] cipherText, byte[] mac, SecretKey macKey) throws GeneralSecurityException {
-        return Arrays.equals(mac, this.generateMac(cipherText, macKey));
+        return Arrays.equals(mac, generateMAC(cipherText, macKey));
     }
 
 
     /**
      * Checks whether a suitable algorithm for PBKD is available.
+     *
      * @throws CryptoIOHelper.NoAlgorithmAvailableException
      */
-    private void providerCheckMacCrypto() throws NoAlgorithmAvailableException {
+    private void providerCheckMACCrypto() throws NoAlgorithmAvailableException {
         final LinkedList<String> algorithms = super.providerCheck();
         if (algorithms.contains("PBKDF2WithHmacSHA256")) {
             PBE_ALGORITHM = "PBKDF2WithHmacSHA256";
@@ -172,11 +185,15 @@ public class MACCrypto extends CryptoIOHelper {
 
     /**
      * Ensures that the PRNG is fixed. Should be used before generating any keys.
-     * Will only run once, and every subsequent call should return immediately.
      */
     private static void fixPrng() {
-        synchronized (PRNGFixes.class) {
-            PRNGFixes.apply();
+        if (!prng.get()) {
+            synchronized (PRNGFixes.class) {
+                if (!prng.get()) {
+                    PRNGFixes.apply();
+                    prng.set(true);
+                }
+            }
         }
     }
 }
