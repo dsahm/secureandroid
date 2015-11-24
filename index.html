@@ -74,13 +74,14 @@ SecureAndroid abstracts cryptographic implementation details and i/o-operations 
     <span class="pl-c">// Try it out to see the specific exceptions..and do smth</span>
 }</pre></div>
 
-<p>You must pass a Context and the minimum iterations for Password-Based-Key-Derivation to the constructor. For more information on the iteration count, visit <a href="https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet">OWASP</a>. SecureAndroid tunes the iterations automatically so that users will have to wait for about 500ms when encrypting or decrypting data. So you need to only think about the minimum iteration count if there really is a minimum that is important to you. Otherwise, simply pass 0. 
+<p>You must pass a Context and the minimum iterations for the PBKDF to the constructor. For more information on the iteration count, visit <a href="https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet">OWASP</a>.
+SecureAndroid tunes the iterations automatically so that users will have to wait for about 500ms when encrypting or decrypting data. So you need to only think about the minimum iteration count if there really is a minimum that is important to you. Otherwise, simply pass 0. 
 If you set a high minimum count that negatively affects your performance, you could - as far as that is possible in the data-flow of your app - use AsyncTasks or libraries like RxJava (highly recommended!) to perform encryption and decryption in the background. Another option to achieve better performance is to switch the integrity check of the data off. More on that later.</p>
 
 <h3>
 <a id="the-api" class="anchor" href="#the-api" aria-hidden="true"><span class="octicon octicon-link"></span></a>The API</h3>
 
-<p>The SecureAndroid class is the only class you will have to use. If you want you can take a look into the other classes and build your own little library out of these...but for now let's simply focus on using the public methods of the SecureAndroid class. To get an overview, you can take a look at the <a href="https://dl.dropboxusercontent.com/u/7603573/site/javadocs/index.html">javadocs</a>. If you want to learn about the public API you should look at the documentation of the class <em>SecureAndroid</em>.</p>
+<p>The SecureAndroid class is the only class you will have to use. If you want you can take a look into the other classes and build your own little library out of these...but for now let's simply focus on using the public methods of the SecureAndroid class. To get an overview, you can take a look at the <a href="https://dl.dropboxusercontent.com/u/7603573/site/index.html">javadocs</a>. If you want to learn about the public API you should look at the documentation of the class <em>SecureAndroid</em>.</p>
 
 <h3>
 <a id="encryptdecrypt" class="anchor" href="#encryptdecrypt" aria-hidden="true"><span class="octicon octicon-link"></span></a>encrypt/decrypt</h3>
