@@ -1,7 +1,6 @@
 package my.secureandroid;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -18,6 +17,10 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+
+/**
+ * Class that implements cryptographic AES-operations.
+ */
 
 public class AESCrypto extends CryptoIOHelper {
 
@@ -36,7 +39,8 @@ public class AESCrypto extends CryptoIOHelper {
     private static final String CIPHER_PART = "cipher";
     private static final String IV_PART = "iv";
     // Exception messages
-    private static final String WRONG_INTEGRITY_MODE = "Bad Padding. Possible reason: Wrong integrity mode";
+    private static final String WRONG_INTEGRITY_MODE = "Bad Padding. Some possible reasons: Wrong integrity mode or changed "+
+            "password without decrypting data first and then re-encrypting it";
     // For PRNG-Fix
     private static AtomicBoolean prng;
 
@@ -117,7 +121,6 @@ public class AESCrypto extends CryptoIOHelper {
         // Generate and return key
         return new SecretKeySpec(temp, AES_INSTANCE);
     }
-
 
     /**
      * Encrypts a given plaintext with the given AES secret key. Also generates a random iv used for encrypting.
@@ -278,7 +281,7 @@ public class AESCrypto extends CryptoIOHelper {
     }
 
     /**
-     * Method to check whether the desire algorithms are provided on the phone. Sets the best automatically.
+     * Method to check which algorithms are available on the current phone. Sets the best automatically.
      *
      * @throws NoAlgorithmAvailableException
      */

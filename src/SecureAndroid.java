@@ -1,7 +1,6 @@
 package my.secureandroid;
 
 import android.content.Context;
-import android.util.Log;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -13,29 +12,30 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * Created by Daniel Sahm on 23.09.15.
+ * The class with the public API of SecureAndroid.
  */
 
 public class SecureAndroid {
 
     // Needed constants
     private static final String AES_MASTERKEY_SALT_ALIAS = "SecureAndroid.AES.Master.salt.alias";
+    private static final String AES_MASTERKEY_WITHOUT_MAC_SALT_ALIAS = "SecureAndroid.AES.Master.without.MAC.salt.alias";
     private static final String AES_INTERMEDIATEKEY_ALIAS = "SecureAndroid.AES.Intermediate.alias";
+    private static final String AES_INTERMEDIATEKEY_WITHOUT_MAC_ALIAS = "SecureAndroid.AES.without.MAC.Intermediate.alias";
     private static final String PASSWORD_SALT_ALIAS = "SecureAndroid.Password.salt.alias";
     private static final String PASSWORD_HASH_ALIAS = "SecureAndroid.Password.hash.alias";
+    private static final String PASSWORD_SALT_ALIAS_WITHOUT_MAC = "SecureAndroid.Password.salt.without.MAC.alias";
+    private static final String PASSWORD_HASH_ALIAS_WITHOUT_MAC = "SecureAndroid.Password.hash.without.MAC.alias";
     private static final String KEY_DATA_ALIAS = "SecureAndroid.Key.Data.alias";
     private static final String CIPHER_IV_ALIAS = "SecureAndroid.CipherIV.alias";
     private static final String MAC_INTERMEDIATE_KEY_ALIAS = "SecureAndroid.MACKey.Alias";
     private static final String MAC_USER_ALIAS = "SecureAndroid.MACIv.Alias";
     private static final String MAC_MASTER_KEY_SALT_ALIAS = "SecureAndroid.MACSalt.alias";
     private static final String AES_INTERMEDIATE_KEY_MAC_ALIAS = "SecureAndroid.AES.Master.MAC.alias";
-    private static final String MAC_INTERMEDIATE_KEY_MAC_ALIAS = "SecureAndroid.MAC.Imediate.MAC.alias";
+    private static final String MAC_INTERMEDIATE_KEY_MAC_ALIAS = "SecureAndroid.MAC.Intermediate.MAC.alias";
     private static final String ITERATION_COUNT_ALIAS = "SecureAndroid.IterationCount.alias";
     private static final String PASSWORD_ALIAS = "SecureAndroid.Password.Alias";
-    private static final String IMEDIATE_KEY_DATA = "SecureAndoird.Intermediate.Key.Data";
-    private static final String NO_ALG_MSG = "No suitable algorithm available on this platform";
-    private static final String NO_KEYMATERIAL_MSG = "No keymaterial found: Nothing encrypted before or wrong" +
-            "integrity mode?";
+    private static final String IMEDIATE_KEY_DATA = "SecureAndroid.Intermediate.Key.Data";
     private static final String AES = "AES";
     private static final String MAC = "MAC";
     private static final int IV_LENGTH_BYTE = 16;
@@ -48,7 +48,11 @@ public class SecureAndroid {
     private static final String WRONG_MODE_EXCEPTION = "Wrong mode, choose SecureAndroid.Mode.FILE or SecureAndroid.Mode.SHARED_PREFERENCES";
     private static final String WRONG_INTEGRITY_MODE_EXCEPTION = "Wrong integrity mode, choose SecureAndroid.Integrity.INTEGRITY or Secure" +
             "Android.Integrity.NO_INTEGRITY";
-    private static final String INTEGRITY_CHECK_FAILED = "The integrity check of the data failed, will not continue to decrypt";
+    private static final String INTEGRITY_CHECK_FAILED = "The integrity check of the data failed. Wrong integrity mode?";
+    private static final String NO_ALG_MSG = "No suitable algorithm available on this platform";
+    private static final String NO_KEYMATERIAL_MSG = "No keymaterial found: Nothing encrypted before or wrong " +
+            "integrity mode?";
+    private static final String NO_PASSWORD = "No password stored so nothing can be changed";
     // Needed objects
     private AESCrypto aesCrypto;
     private PasswordCrypto passwordCrypto;
@@ -102,7 +106,7 @@ public class SecureAndroid {
     /**
      * Encrypts the given byte [] plaintext and returns the ciphertext as byte array.
      *
-     * @param integrity The integrity mode. Choose SecurAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
+     * @param integrity The integrity mode. Choose SecureAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
      * @param plaintext The plaintext as byte array.
      * @return          The ciphertext as byte array.
      * @throws CryptoIOHelper.NoKeyMaterialException
@@ -119,7 +123,7 @@ public class SecureAndroid {
     /**
      * Decrypts the given byte [] ciphertxt and returns the plaintext as byte array.
      *
-     * @param integrity The integrity mode. Choose SecurAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
+     * @param integrity The integrity mode. Choose SecureAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
      * @param ciphertext    The ciphertext as byte array.
      * @return              The plaintext as byte array.
      * @throws CryptoIOHelper.NoKeyMaterialException
@@ -137,7 +141,7 @@ public class SecureAndroid {
      * Encrypts the given byte array plaintext with a key derived from the provided
      * password and returns the ciphertext as byte array.
      *
-     * @param integrity The integrity mode. Choose SecurAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
+     * @param integrity The integrity mode. Choose SecureAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
      * @param plaintext The plaintext as byte array.
      * @param password  The desired password that will be used to derive the encryption key.
      * @return          The ciphertext as byte array.
@@ -156,7 +160,7 @@ public class SecureAndroid {
      * Decrypts the given byte array ciphertext with a key derived from the provided
      * password and returns the plaintext as byte array.
      *
-     * @param integrity     The integrity mode. Choose SecurAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
+     * @param integrity     The integrity mode. Choose SecureAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
      * @param ciphertext    The ciphertext as byte array.
      * @param password      The desired password that will be used to derive the decryption key.
      * @return              The plaintext as byte array.
@@ -174,7 +178,7 @@ public class SecureAndroid {
     /**
      * Encrypts the given plaintext and stores it on the device under the provided alias.
      *
-     * @param integrity     The integrity mode. Choose SecurAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
+     * @param integrity     The integrity mode. Choose SecureAndroid.Integrity.INTEGRITY or NO_INTEGRITY.
      * @param mode          The storage mode. Choose SecureAndroid.Mode.SHARED_PREFERENCES FILE.
      * @param plaintext     The plaintext as byte array.
      * @param alias         The alias under which the data will be stored.
@@ -275,6 +279,87 @@ public class SecureAndroid {
     }
 
     /**
+     * Method to change the password.
+     *
+     * @param oldPassword The old password.
+     * @param newPassword The new password.
+     * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     */
+    public boolean changePassword(char [] oldPassword, char [] newPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
+        boolean dataNotAvailable = false;
+        try {
+            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
+            if (passwordCrypto.checkPassword(oldPassword, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
+                wipeKey();
+                createAndStoreAndGetKeyData(newPassword);
+            } else {
+                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
+            }
+        } catch (CryptoIOHelper.DataNotAvailableException e) {
+            dataNotAvailable = true;
+        }
+        try {
+            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
+            if (passwordCrypto.checkPassword(oldPassword, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
+                wipeKey();
+                createAndStoreAndGetKeyDataWithoutMAC(newPassword);
+            } else {
+                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
+            }
+        } catch (CryptoIOHelper.DataNotAvailableException e) {
+            if (dataNotAvailable) {
+                throw new CryptoIOHelper.DataNotAvailableException(NO_PASSWORD);
+            } else {
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Method to change the from the auto-generated password to a chosen password.
+     *
+     * @param newPassword The new password.
+     * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     */
+    public boolean changeFromAutoPassword(char [] newPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
+        boolean dataNotAvailable = false;
+        try {
+            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
+            if (passwordCrypto.checkPassword(getAutoPassword().toCharArray(), hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
+                wipeKey();
+                createAndStoreAndGetKeyData(newPassword);
+            } else {
+                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
+            }
+        } catch (CryptoIOHelper.DataNotAvailableException e) {
+            dataNotAvailable = true;
+        }
+        try {
+            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
+            if (passwordCrypto.checkPassword(getAutoPassword().toCharArray(), hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
+                wipeKey();
+                createAndStoreAndGetKeyDataWithoutMAC(newPassword);
+            } else {
+                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
+            }
+        } catch (CryptoIOHelper.DataNotAvailableException e) {
+            if (dataNotAvailable) {
+                throw new CryptoIOHelper.DataNotAvailableException(NO_PASSWORD);
+            } else {
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Deletes either the SharedPrefs alias entry or the file saved under the alias.
      *
      * @param mode      The storage mode. Choose SecureAndroid.Mode.SHARED_PREFERENCES or FILE.
@@ -300,8 +385,8 @@ public class SecureAndroid {
      * of it being irrecoverable.
      */
     public void wipeKey()  {
-        // For production
         cryptoIOHelper.deleteSharedPref(IMEDIATE_KEY_DATA);
+        cryptoIOHelper.deleteSharedPref(KEY_DATA_ALIAS);
         cryptoIOHelper.deleteSharedPref(PASSWORD_ALIAS);
     }
 
@@ -540,7 +625,7 @@ public class SecureAndroid {
         storeRootSaltData(aesMasterKeyAndSalt.getSalt(), macMasterKeyAndSalt.getSalt());
         // Generate the intermediate aes key and encrypt it with the master key
         AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(aesCrypto.generateRandomAESKey().getEncoded(),
-                aesMasterKeyAndSalt.getSecretKey());
+               aesMasterKeyAndSalt.getSecretKey());
         // Generate the intermediate mac key and encrypt it with the master key
         AESCrypto.CipherIV intermediateMACCipherIv = aesCrypto.encryptAES(macCrypto.generateRandomMACKey().getEncoded(), aesMasterKeyAndSalt.getSecretKey());
         // Generate MAC for encrypted aes-intermediate key and encrypted mac-intermediate key
@@ -558,15 +643,16 @@ public class SecureAndroid {
         // Check the integrity of the newly stored and then loaded intermediate key as failsafe mechanism
         // to check if the key and mac material where generated and stored correctly
         if (macCrypto.checkIntegrity(intermediateAESCipherIV.getCipher(), aesIntermediateMAC, macMasterKeyAndSalt.getSecretKey()) &&
-                macCrypto.checkIntegrity(intermediateMACCipherIv.getCipher(), macIntermediateMAC, macMasterKeyAndSalt.getSecretKey())) {
+               macCrypto.checkIntegrity(intermediateMACCipherIv.getCipher(), macIntermediateMAC, macMasterKeyAndSalt.getSecretKey())) {
             // Get the raw key material
             final byte[] rawAES = aesCrypto.decryptAES(intermediateAESCipherIV.getCipher(), intermediateAESCipherIV.getIv(), aesMasterKeyAndSalt.getSecretKey());
             final byte[] rawMAC = aesCrypto.decryptAES(intermediateMACCipherIv.getCipher(), intermediateMACCipherIv.getIv(), aesMasterKeyAndSalt.getSecretKey());
             // Generate the secret-key objects and return them
             return new SecretKeys(new SecretKeySpec(rawAES, 0, rawAES.length, AES), new SecretKeySpec(rawMAC, 0, rawMAC.length, MAC));
+        } else {
+            // throw exception if not
+            throw new CryptoIOHelper.IntegrityCheckFailedException(INTEGRITY_CHECK_FAILED);
         }
-        // throw exception if not
-        throw new CryptoIOHelper.IntegrityCheckFailedException(INTEGRITY_CHECK_FAILED);
     }
 
     /**
@@ -587,16 +673,15 @@ public class SecureAndroid {
         // Store the salt values used to generate the aes-key
         storeRootSaltDataWithoutMAC(aesMasterKeyAndSalt.getSalt());
         // Generate the intermediate aes key and encrypt it with the master key
-        AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(aesCrypto.generateRandomAESKey().getEncoded(),
-                aesMasterKeyAndSalt.getSecretKey());
-        // Store the hashed password+salt, the intermediate key+iv and the mac-key+iv
+        AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(aesCrypto.generateRandomAESKey().getEncoded(), aesMasterKeyAndSalt.getSecretKey());
+        // Store the hashed password+salt and the intermediate key+iv
         storePasswordAndIntermediateKeyCipherIVWithoutMAC(hashedPasswordAndSalt, intermediateAESCipherIV);
         // Load the stored keys to check if save was successful
-        intermediateAESCipherIV = aesCrypto.getCipherAndIVFromSharedPref(IMEDIATE_KEY_DATA, AES_INTERMEDIATEKEY_ALIAS);
-        // to check if the key and mac material where generated and stored correctly
+        intermediateAESCipherIV = aesCrypto.getCipherAndIVFromSharedPref(IMEDIATE_KEY_DATA, AES_INTERMEDIATEKEY_WITHOUT_MAC_ALIAS);
+        // to check if the key material where generated and stored correctly
         // Get the raw key material
         final byte[] rawAES = aesCrypto.decryptAES(intermediateAESCipherIV.getCipher(), intermediateAESCipherIV.getIv(), aesMasterKeyAndSalt.getSecretKey());
-        // Generate the secret-key objects and return them
+        // Generate the secret-key object and return it
         return new SecretKeySpec(rawAES, 0, rawAES.length, AES);
     }
 
@@ -667,14 +752,14 @@ public class SecureAndroid {
         // Get the formerly hashed password and its salt value from Shared Preferences
         try {
             final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.
-                    getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
+                    getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
             // Check whether the hash of the given password+salt equals the hash of the store password
             if (passwordCrypto.checkPassword(password, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
                 // Load the salt value for generating the master aes key
                 try {
-                    final byte[] aesSalt = cryptoIOHelper.loadFromSharedPrefBase64(KEY_DATA_ALIAS, AES_MASTERKEY_SALT_ALIAS);
+                    final byte[] aesSalt = cryptoIOHelper.loadFromSharedPrefBase64(KEY_DATA_ALIAS, AES_MASTERKEY_WITHOUT_MAC_SALT_ALIAS);
                     // Load the encrypted intermediate key
-                    final AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.getCipherAndIVFromSharedPref(IMEDIATE_KEY_DATA, AES_INTERMEDIATEKEY_ALIAS);
+                    final AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.getCipherAndIVFromSharedPref(IMEDIATE_KEY_DATA, AES_INTERMEDIATEKEY_WITHOUT_MAC_ALIAS);
                     // generate Master AES-Key
                     final SecretKey aesMasterKey = aesCrypto.generateAESKeyFromPasswordSetSalt(password, aesSalt);
                     // Extract the raw aes key data
@@ -716,8 +801,8 @@ public class SecureAndroid {
      */
     private void storePasswordAndIntermediateKeyCipherIVWithoutMAC(PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt, AESCrypto.CipherIV intermediateAESCipherIV) {
         // Store the hashed password+salt and the intermediate key+iv
-        passwordCrypto.storeHashedPasswordAndSaltSharedPref(hashedPasswordAndSalt, PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
-        aesCrypto.saveCipherAndIVToSharedPrefBase64(intermediateAESCipherIV, IMEDIATE_KEY_DATA, AES_INTERMEDIATEKEY_ALIAS);
+        passwordCrypto.storeHashedPasswordAndSaltSharedPref(hashedPasswordAndSalt, PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
+        aesCrypto.saveCipherAndIVToSharedPrefBase64(intermediateAESCipherIV, IMEDIATE_KEY_DATA, AES_INTERMEDIATEKEY_WITHOUT_MAC_ALIAS);
     }
 
     /**
@@ -740,7 +825,7 @@ public class SecureAndroid {
      */
     private void storeRootSaltDataWithoutMAC(byte[] saltAESKey) {
         // Save the salt used to generate the aes master-key in Shared Preferences
-        cryptoIOHelper.saveToSharedPrefBase64(KEY_DATA_ALIAS, AES_MASTERKEY_SALT_ALIAS, saltAESKey);
+        cryptoIOHelper.saveToSharedPrefBase64(KEY_DATA_ALIAS, AES_MASTERKEY_WITHOUT_MAC_SALT_ALIAS, saltAESKey);
     }
 
     /**

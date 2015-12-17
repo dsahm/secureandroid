@@ -13,6 +13,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+/**
+ * Class that implements cryptographic password-operations.
+ */
+
 public class PasswordCrypto extends CryptoIOHelper {
 
     // Messages
@@ -230,7 +234,6 @@ public class PasswordCrypto extends CryptoIOHelper {
         protected byte[] getHashedPassword() {
             return password;
         }
-
         protected byte[] getSalt() {
             return salt;
         }

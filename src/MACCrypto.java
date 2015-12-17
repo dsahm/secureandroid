@@ -18,6 +18,10 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+/**
+ * Class that implements cryptographic MAC-operations.
+ */
+
 public class MACCrypto extends CryptoIOHelper {
 
     private static final String NO_ALG_MSG = "No suitable algorithm available on this platform";
@@ -150,7 +154,6 @@ public class MACCrypto extends CryptoIOHelper {
         return Arrays.equals(mac, generateMAC(cipherText, macKey));
     }
 
-
     /**
      * Checks whether a suitable algorithm for PBKD is available.
      *
@@ -163,20 +166,15 @@ public class MACCrypto extends CryptoIOHelper {
         } else if (algorithms.contains("PBKDF2WithHmacSHA1")) {
             PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
         } else {
-            //PBE_ALGORITHM = "PBKDF2WithHmacSHA1";
             throw new NoAlgorithmAvailableException(NO_ALG_MSG);
         }
         if (algorithms.contains("HmacSHA256")) {
             MAC_ALGORITHM = "HmacSHA256";
-//            Log.i("Info MACCrypto", "HmacSHA256");
         } else if (algorithms.contains("HMACSHA256")) {
             MAC_ALGORITHM = "HMACSHA256";
-//            Log.i("Info MACCrypto", "HMACSHA256");
         } else if (algorithms.contains("HmacSHA1")) {
-//            Log.i("Info MACCrypto", "HmacSHA1");
             MAC_ALGORITHM = "HmacSHA1";
         } else if (algorithms.contains("HMACSHA1")) {
-//            Log.i("Info MACCrypto", "HMACSHA1");
             MAC_ALGORITHM = "HMACSHA1";
         } else {
             throw new NoAlgorithmAvailableException(NO_ALG_MSG);

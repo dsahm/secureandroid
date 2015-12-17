@@ -25,6 +25,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
+/**
+ * Helper class.
+ */
+
 public class CryptoIOHelper {
 
     // Context
@@ -41,13 +45,12 @@ public class CryptoIOHelper {
     // For PRNG-Fix
     private static AtomicBoolean prng;
 
-
     /**
      * Constructor, sets the context.
      *
      * @param context The context.
      */
-    protected CryptoIOHelper (Context context) {
+    public CryptoIOHelper (Context context) {
         this.context = context;
         // Apply Googles pseudo random number generator fix
         prng = new AtomicBoolean(false);
@@ -81,7 +84,7 @@ public class CryptoIOHelper {
      * @return          The decoded data as byte array.
      */
     // public for testing purposes
-    public byte[] decodeBase64(byte[] data) {
+    protected byte[] decodeBase64(byte[] data) {
         return Base64.decode(data, Base64.NO_WRAP);
     }
 
@@ -209,7 +212,6 @@ public class CryptoIOHelper {
         LinkedList<String> algorithmList = new LinkedList<String>();
         final Provider[] providers = Security.getProviders();
         for (Provider provider : providers) {
-//            Log.i("CRYPTO", "provider: " + provider.getName());
             final Set<Provider.Service> services = provider.getServices();
             for (Provider.Service service : services) {
 //                Log.i("CRYPTO", "  algorithm: " + service.getAlgorithm());
@@ -296,7 +298,6 @@ public class CryptoIOHelper {
             super(message);
         }
     }
-
 
     /**
      * Class to hold a secretkey and the salt the key was generated with
