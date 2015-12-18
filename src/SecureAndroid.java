@@ -360,6 +360,46 @@ public class SecureAndroid {
     }
 
     /**
+     * Method to change to the auto-generated password.
+     *
+     * @param oldPassword The old password.
+     * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     */
+    public boolean changeToAutoPassword(char [] oldPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
+        boolean dataNotAvailable = false;
+        try {
+            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
+            if (passwordCrypto.checkPassword(oldPassword, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
+                wipeKey();
+                createAndStoreAndGetKeyData(getAutoPassword().toCharArray());
+            } else {
+                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
+            }
+        } catch (CryptoIOHelper.DataNotAvailableException e) {
+            dataNotAvailable = true;
+        }
+        try {
+            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
+            if (passwordCrypto.checkPassword(oldPassword, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
+                wipeKey();
+                createAndStoreAndGetKeyDataWithoutMAC(getAutoPassword().toCharArray());
+            } else {
+                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
+            }
+        } catch (CryptoIOHelper.DataNotAvailableException e) {
+            if (dataNotAvailable) {
+                throw new CryptoIOHelper.DataNotAvailableException(NO_PASSWORD);
+            } else {
+                return true;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Deletes either the SharedPrefs alias entry or the file saved under the alias.
      *
      * @param mode      The storage mode. Choose SecureAndroid.Mode.SHARED_PREFERENCES or FILE.
