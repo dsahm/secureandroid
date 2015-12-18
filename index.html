@@ -1,37 +1,33 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset='utf-8'>
+    <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <title>SecureAndroid by dsahm</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-dark.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <title>SecureAndroid by dsahm</title>
   </head>
-
   <body>
-    <div id="container">
-      <div class="inner">
-
-        <header>
-          <h1>SecureAndroid</h1>
-          <h2>A small library for encrypting and storing data securely on Android devices.</h2>
-        </header>
-
-        <section id="downloads" class="clearfix">
-          <a href="https://github.com/dsahm/secureandroid/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
-          <a href="https://github.com/dsahm/secureandroid/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
-          <a href="https://github.com/dsahm/secureandroid" id="view-on-github" class="button"><span>View on GitHub</span></a>
-        </section>
-
-        <hr>
-
-        <section id="main_content">
-          <h3>
+    <div class="wrapper">
+      <header>
+        <h1>SecureAndroid</h1>
+        <p>A small library for encrypting and storing data securely on Android devices.</p>
+        <p class="view"><a href="https://github.com/dsahm/secureandroid">View the Project on GitHub <small>dsahm/secureandroid</small></a></p>
+        <ul>
+          <li><a href="https://github.com/dsahm/secureandroid/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/dsahm/secureandroid/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/dsahm/secureandroid">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h3>
 <a id="welcome-to-secureandroid" class="anchor" href="#welcome-to-secureandroid" aria-hidden="true"><span class="octicon octicon-link"></span></a>Welcome to SecureAndroid</h3>
 
 <p>SecureAndroid is a small library that will help you to easily encrypt, decrypt and store data securely on Android devices.
@@ -149,7 +145,18 @@ sc<span class="pl-k">.</span>encryptAndStoreWithPassword(<span class="pl-smi">Se
 <h3>
 <a id="changepasswordchangefromautopasswordchangetoautopassword" class="anchor" href="#changepasswordchangefromautopasswordchangetoautopassword" aria-hidden="true"><span class="octicon octicon-link"></span></a>changePassword/changeFromAutoPassword/changeToAutoPassword</h3>
 
-<p>If you want to change the password (see above), you can use one of these methods. The changePassword method must be invoked if you have manually set a password before. If you used to auto-generated password, you can set a manual password with changeFromAutoPassword. Accordingly, you can revert back from using a manual password to the auto-generate-option by calling changeToAutoPassword. Now some examples:</p>
+<p>If you want to change the password (see above), you can use one of these methods. The changePassword method must be invoked if you have manually set a password before. If you used to auto-generated password, you can set a manual password with changeFromAutoPassword. Accordingly, you can revert back from using a manual password to the auto-generate-option by calling changeToAutoPassword. <em><strong>IMPORTANT</strong></em>: Before you change a password you have to decrypt all your encrypted data. Then after having changed the password, you can encrypt the data again with the new password. Lets take a look at an example:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-c">// Encrypt something with the auto generated password</span>
+<span class="pl-k">byte</span>[] cipher <span class="pl-k">=</span> secureAndroid<span class="pl-k">.</span>encrypt(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>NO_INTEGRITY</span>, mystring<span class="pl-k">.</span>getBytes(<span class="pl-s"><span class="pl-pds">"</span>UTF-8<span class="pl-pds">"</span></span>));
+<span class="pl-c">// Decrypt data before changing password</span>
+<span class="pl-k">byte</span>[] plainText <span class="pl-k">=</span> secureAndroid<span class="pl-k">.</span>decrypt(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>NO_INTEGRITY</span>, cipher);
+<span class="pl-c">// Change password</span>
+secureAndroid<span class="pl-k">.</span>changeFromAutoPassword(<span class="pl-s"><span class="pl-pds">"</span>my password<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray());
+<span class="pl-c">// Encrypt your string again</span>
+cipher <span class="pl-k">=</span> secureAndroid<span class="pl-k">.</span>encryptWithPassword(<span class="pl-smi">SecureAndroid</span><span class="pl-k">.</span><span class="pl-smi">Integrity</span><span class="pl-c1"><span class="pl-k">.</span>NO_INTEGRITY</span>, plainText, <span class="pl-s"><span class="pl-pds">"</span>my password<span class="pl-pds">"</span></span><span class="pl-k">.</span>toCharArray());
+<span class="pl-c">// The same goes for reverting back to the auto password ...</span>
+<span class="pl-c">// ...</span></pre></div>
 
 <h3>
 <a id="wipekey" class="anchor" href="#wipekey" aria-hidden="true"><span class="octicon octicon-link"></span></a>wipeKey</h3>
@@ -191,15 +198,13 @@ sc<span class="pl-k">.</span>deleteData(<span class="pl-smi">SecureAndroid</span
 <a id="where-is-data-stored" class="anchor" href="#where-is-data-stored" aria-hidden="true"><span class="octicon octicon-link"></span></a>Where is data stored?</h3>
 
 <p>All key material is stored in the SharedPreferences of the app that you are using SecureAndroid with. The encrypted data is stored either in the SharedPreferences or in a file, according the MODE flag (see Javadocs or explanation above).</p>
-        </section>
-
-        <footer>
-          SecureAndroid is maintained by <a href="https://github.com/dsahm">dsahm</a><br>
-          This page was generated by <a href="https://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
-        </footer>
-
-        
-      </div>
+      </section>
     </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/dsahm">dsahm</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
   </body>
 </html>
