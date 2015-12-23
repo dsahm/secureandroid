@@ -5,6 +5,7 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
@@ -151,7 +152,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @throws GeneralSecurityException
      */
     protected boolean checkIntegrity(byte[] cipherText, byte[] mac, SecretKey macKey) throws GeneralSecurityException {
-        return Arrays.equals(mac, generateMAC(cipherText, macKey));
+        return MessageDigest.isEqual(mac, generateMAC(cipherText, macKey));
     }
 
     /**

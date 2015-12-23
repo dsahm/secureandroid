@@ -50,7 +50,7 @@ public class CryptoIOHelper {
      *
      * @param context The context.
      */
-    public CryptoIOHelper (Context context) {
+    protected CryptoIOHelper (Context context) {
         this.context = context;
         // Apply Googles pseudo random number generator fix
         prng = new AtomicBoolean(false);
@@ -214,7 +214,7 @@ public class CryptoIOHelper {
         for (Provider provider : providers) {
             final Set<Provider.Service> services = provider.getServices();
             for (Provider.Service service : services) {
-//                Log.i("CRYPTO", "  algorithm: " + service.getAlgorithm());
+                Log.i("CRYPTO", "  algorithm: " + service.getAlgorithm());
                 algorithmList.add(service.getAlgorithm());
             }
         }

@@ -4,6 +4,7 @@ import android.content.Context;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.LinkedList;
@@ -291,32 +292,71 @@ public class SecureAndroid {
     public boolean changePassword(char [] oldPassword, char [] newPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
         boolean dataNotAvailable = false;
         try {
-            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
-            if (passwordCrypto.checkPassword(oldPassword, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
-                wipeKey();
-                createAndStoreAndGetKeyData(newPassword);
+            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
+            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
+                final SecretKeys oldKeys = getKeyData(oldPassword);
+                wipeRootIntermediateKeyAndPasswordData();
+                // Hash the new password with salt and get the hashed password and the salt
+                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(newPassword);
+                // Generate master AES key
+                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(newPassword);
+                // Generate master MAC key
+                final AESCrypto.SaltAndKey macMasterKeyAndSalt = macCrypto.generateRandomMACKeyFromPasswordGetSalt(newPassword);
+                // Store the salt values used to generate the aes- and mac-masterkeys
+                storeRootSaltData(aesMasterKeyAndSalt.getSalt(), macMasterKeyAndSalt.getSalt());
+                // encrypt the intermediate aes key with the new master key
+                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKeys.getAESKey().getEncoded(),
+                        aesMasterKeyAndSalt.getSecretKey());
+                // encrypt the intermediate mac key with the new master key
+                AESCrypto.CipherIV intermediateMACCipherIv = aesCrypto.encryptAES(oldKeys.getMACKey().getEncoded(),
+                        aesMasterKeyAndSalt.getSecretKey());
+                // Generate MAC for encrypted aes-intermediate key and encrypted mac-intermediate key
+                byte[] aesIntermediateMAC = macCrypto.generateMAC(intermediateAESCipherIV.getCipher(), macMasterKeyAndSalt.getSecretKey());
+                byte[] macIntermediateMAC = macCrypto.generateMAC(intermediateMACCipherIv.getCipher(), macMasterKeyAndSalt.getSecretKey());
+                // Store MACs for encrypted aes- and mac-intermediate keys
+                storeIntermediateKeysMACs(aesIntermediateMAC, macIntermediateMAC);
+                // Store the hashed password+salt, the intermediate key+iv and the mac-key+iv
+                storePasswordAndIntermediateKeyCipherIV(newHashedPasswordAndSalt, intermediateAESCipherIV, intermediateMACCipherIv);
+                // Load the stored keys to check if save was successful
+                final SecretKeys newKeys = getKeyData(newPassword);
+                if (!(isEqual(newKeys.getAESKey().getEncoded(), oldKeys.getAESKey().getEncoded()) &&
+                        isEqual(newKeys.getMACKey().getEncoded(), oldKeys.getMACKey().getEncoded()))) {
+                    return false;
+                }
             } else {
                 throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
             }
-        } catch (CryptoIOHelper.DataNotAvailableException e) {
+        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
             dataNotAvailable = true;
         }
         try {
-            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
-            if (passwordCrypto.checkPassword(oldPassword, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
-                wipeKey();
-                createAndStoreAndGetKeyDataWithoutMAC(newPassword);
+            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
+            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
+                final SecretKey oldKey = getKeyDataWithoutMAC(oldPassword);
+                wipeRootIntermediateKeyAndPasswordDataWithoutMAC();
+                // Hash the new password with salt and get the hashed password and the salt
+                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(newPassword);
+                // Generate the new master AES key
+                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(newPassword);
+                // Store the salt values used to generate the aes-key
+                storeRootSaltDataWithoutMAC(aesMasterKeyAndSalt.getSalt());
+                // encrypt the intermediate aes key with the new master key
+                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKey.getEncoded(), aesMasterKeyAndSalt.getSecretKey());
+                // Store the hashed password+salt and the intermediate key+iv
+                storePasswordAndIntermediateKeyCipherIVWithoutMAC(newHashedPasswordAndSalt, intermediateAESCipherIV);
+                // Load the stored keys to check if save was successful
+                final SecretKey newKey = getKeyDataWithoutMAC(newPassword);
+                return (isEqual(oldKey.getEncoded(), newKey.getEncoded()));
             } else {
                 throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
             }
-        } catch (CryptoIOHelper.DataNotAvailableException e) {
+        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
             if (dataNotAvailable) {
                 throw new CryptoIOHelper.DataNotAvailableException(NO_PASSWORD);
             } else {
                 return true;
             }
         }
-        return true;
     }
 
     /**
@@ -331,32 +371,71 @@ public class SecureAndroid {
     public boolean changeFromAutoPassword(char [] newPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
         boolean dataNotAvailable = false;
         try {
-            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
-            if (passwordCrypto.checkPassword(getAutoPassword().toCharArray(), hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
-                wipeKey();
-                createAndStoreAndGetKeyData(newPassword);
+            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
+            if (passwordCrypto.checkPassword(getAutoPassword().toCharArray(), oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
+                final SecretKeys oldKeys = getKeyData(getAutoPassword().toCharArray());
+                wipeRootIntermediateKeyAndPasswordData();
+                // Hash the new password with salt and get the hashed password and the salt
+                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(newPassword);
+                // Generate master AES key
+                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(newPassword);
+                // Generate master MAC key
+                final AESCrypto.SaltAndKey macMasterKeyAndSalt = macCrypto.generateRandomMACKeyFromPasswordGetSalt(newPassword);
+                // Store the salt values used to generate the aes- and mac-masterkeys
+                storeRootSaltData(aesMasterKeyAndSalt.getSalt(), macMasterKeyAndSalt.getSalt());
+                // encrypt the intermediate aes key with the new master key
+                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKeys.getAESKey().getEncoded(),
+                        aesMasterKeyAndSalt.getSecretKey());
+                // encrypt the intermediate mac key with the new master key
+                AESCrypto.CipherIV intermediateMACCipherIv = aesCrypto.encryptAES(oldKeys.getMACKey().getEncoded(),
+                        aesMasterKeyAndSalt.getSecretKey());
+                // Generate MAC for encrypted aes-intermediate key and encrypted mac-intermediate key
+                byte[] aesIntermediateMAC = macCrypto.generateMAC(intermediateAESCipherIV.getCipher(), macMasterKeyAndSalt.getSecretKey());
+                byte[] macIntermediateMAC = macCrypto.generateMAC(intermediateMACCipherIv.getCipher(), macMasterKeyAndSalt.getSecretKey());
+                // Store MACs for encrypted aes- and mac-intermediate keys
+                storeIntermediateKeysMACs(aesIntermediateMAC, macIntermediateMAC);
+                // Store the hashed password+salt, the intermediate key+iv and the mac-key+iv
+                storePasswordAndIntermediateKeyCipherIV(newHashedPasswordAndSalt, intermediateAESCipherIV, intermediateMACCipherIv);
+                // Load the stored keys to check if save was successful
+                final SecretKeys newKeys = getKeyData(newPassword);
+                if (!(isEqual(newKeys.getAESKey().getEncoded(), oldKeys.getAESKey().getEncoded()) &&
+                        isEqual(newKeys.getMACKey().getEncoded(), oldKeys.getMACKey().getEncoded()))) {
+                    return false;
+                }
             } else {
                 throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
             }
-        } catch (CryptoIOHelper.DataNotAvailableException e) {
+        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
             dataNotAvailable = true;
         }
         try {
-            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
-            if (passwordCrypto.checkPassword(getAutoPassword().toCharArray(), hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
-                wipeKey();
-                createAndStoreAndGetKeyDataWithoutMAC(newPassword);
+            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
+            if (passwordCrypto.checkPassword(getAutoPassword().toCharArray(), oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
+                final SecretKey oldKey = getKeyDataWithoutMAC(getAutoPassword().toCharArray());
+                wipeRootIntermediateKeyAndPasswordDataWithoutMAC();
+                // Hash the new password with salt and get the hashed password and the salt
+                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(newPassword);
+                // Generate the new master AES key
+                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(newPassword);
+                // Store the salt values used to generate the aes-key
+                storeRootSaltDataWithoutMAC(aesMasterKeyAndSalt.getSalt());
+                // encrypt the intermediate aes key with the new master key
+                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKey.getEncoded(), aesMasterKeyAndSalt.getSecretKey());
+                // Store the hashed password+salt and the intermediate key+iv
+                storePasswordAndIntermediateKeyCipherIVWithoutMAC(newHashedPasswordAndSalt, intermediateAESCipherIV);
+                // Load the stored keys to check if save was successful
+                final SecretKey newKey = getKeyDataWithoutMAC(newPassword);
+                return (isEqual(oldKey.getEncoded(), newKey.getEncoded()));
             } else {
                 throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
             }
-        } catch (CryptoIOHelper.DataNotAvailableException e) {
+        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
             if (dataNotAvailable) {
                 throw new CryptoIOHelper.DataNotAvailableException(NO_PASSWORD);
             } else {
                 return true;
             }
         }
-        return true;
     }
 
     /**
@@ -371,32 +450,71 @@ public class SecureAndroid {
     public boolean changeToAutoPassword(char [] oldPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
         boolean dataNotAvailable = false;
         try {
-            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
-            if (passwordCrypto.checkPassword(oldPassword, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
-                wipeKey();
-                createAndStoreAndGetKeyData(getAutoPassword().toCharArray());
+            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
+            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
+                final SecretKeys oldKeys = getKeyData(oldPassword);
+                wipeRootIntermediateKeyAndPasswordData();
+                // Hash the new password with salt and get the hashed password and the salt
+                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(getAutoPassword().toCharArray());
+                // Generate master AES key
+                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(getAutoPassword().toCharArray());
+                // Generate master MAC key
+                final AESCrypto.SaltAndKey macMasterKeyAndSalt = macCrypto.generateRandomMACKeyFromPasswordGetSalt(getAutoPassword().toCharArray());
+                // Store the salt values used to generate the aes- and mac-masterkeys
+                storeRootSaltData(aesMasterKeyAndSalt.getSalt(), macMasterKeyAndSalt.getSalt());
+                // encrypt the intermediate aes key with the new master key
+                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKeys.getAESKey().getEncoded(),
+                        aesMasterKeyAndSalt.getSecretKey());
+                // encrypt the intermediate mac key with the new master key
+                AESCrypto.CipherIV intermediateMACCipherIv = aesCrypto.encryptAES(oldKeys.getMACKey().getEncoded(),
+                        aesMasterKeyAndSalt.getSecretKey());
+                // Generate MAC for encrypted aes-intermediate key and encrypted mac-intermediate key
+                byte[] aesIntermediateMAC = macCrypto.generateMAC(intermediateAESCipherIV.getCipher(), macMasterKeyAndSalt.getSecretKey());
+                byte[] macIntermediateMAC = macCrypto.generateMAC(intermediateMACCipherIv.getCipher(), macMasterKeyAndSalt.getSecretKey());
+                // Store MACs for encrypted aes- and mac-intermediate keys
+                storeIntermediateKeysMACs(aesIntermediateMAC, macIntermediateMAC);
+                // Store the hashed password+salt, the intermediate key+iv and the mac-key+iv
+                storePasswordAndIntermediateKeyCipherIV(newHashedPasswordAndSalt, intermediateAESCipherIV, intermediateMACCipherIv);
+                // Load the stored keys to check if save was successful
+                final SecretKeys newKeys = getKeyData(getAutoPassword().toCharArray());
+                if (!(isEqual(newKeys.getAESKey().getEncoded(), oldKeys.getAESKey().getEncoded()) &&
+                        isEqual(newKeys.getMACKey().getEncoded(), oldKeys.getMACKey().getEncoded()))) {
+                    return false;
+                }
             } else {
                 throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
             }
-        } catch (CryptoIOHelper.DataNotAvailableException e) {
+        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
             dataNotAvailable = true;
         }
         try {
-            final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
-            if (passwordCrypto.checkPassword(oldPassword, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
-                wipeKey();
-                createAndStoreAndGetKeyDataWithoutMAC(getAutoPassword().toCharArray());
+            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
+            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
+                final SecretKey oldKey = getKeyDataWithoutMAC(oldPassword);
+                wipeRootIntermediateKeyAndPasswordDataWithoutMAC();
+                // Hash the new password with salt and get the hashed password and the salt
+                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(getAutoPassword().toCharArray());
+                // Generate the new master AES key
+                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(getAutoPassword().toCharArray());
+                // Store the salt values used to generate the aes-key
+                storeRootSaltDataWithoutMAC(aesMasterKeyAndSalt.getSalt());
+                // encrypt the intermediate aes key with the new master key
+                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKey.getEncoded(), aesMasterKeyAndSalt.getSecretKey());
+                // Store the hashed password+salt and the intermediate key+iv
+                storePasswordAndIntermediateKeyCipherIVWithoutMAC(newHashedPasswordAndSalt, intermediateAESCipherIV);
+                // Load the stored keys to check if save was successful
+                final SecretKey newKey = getKeyDataWithoutMAC(getAutoPassword().toCharArray());
+                return (isEqual(oldKey.getEncoded(), newKey.getEncoded()));
             } else {
                 throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
             }
-        } catch (CryptoIOHelper.DataNotAvailableException e) {
+        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
             if (dataNotAvailable) {
                 throw new CryptoIOHelper.DataNotAvailableException(NO_PASSWORD);
             } else {
                 return true;
             }
         }
-        return true;
     }
 
     /**
@@ -428,6 +546,30 @@ public class SecureAndroid {
         cryptoIOHelper.deleteSharedPref(IMEDIATE_KEY_DATA);
         cryptoIOHelper.deleteSharedPref(KEY_DATA_ALIAS);
         cryptoIOHelper.deleteSharedPref(PASSWORD_ALIAS);
+    }
+
+    /**
+     * Wipes the root key salts and the password hashes.
+     */
+    private void wipeRootIntermediateKeyAndPasswordData()  {
+        cryptoIOHelper.deleteFromSharedPref(KEY_DATA_ALIAS, AES_MASTERKEY_SALT_ALIAS);
+        cryptoIOHelper.deleteFromSharedPref(KEY_DATA_ALIAS, MAC_MASTER_KEY_SALT_ALIAS);
+        cryptoIOHelper.deleteFromSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS);
+        cryptoIOHelper.deleteFromSharedPref(PASSWORD_ALIAS, PASSWORD_SALT_ALIAS);
+        cryptoIOHelper.deleteFromSharedPref(IMEDIATE_KEY_DATA, AES_INTERMEDIATEKEY_ALIAS);
+        cryptoIOHelper.deleteFromSharedPref(IMEDIATE_KEY_DATA, AES_INTERMEDIATE_KEY_MAC_ALIAS);
+        cryptoIOHelper.deleteFromSharedPref(IMEDIATE_KEY_DATA, MAC_INTERMEDIATE_KEY_ALIAS);
+        cryptoIOHelper.deleteFromSharedPref(IMEDIATE_KEY_DATA, MAC_INTERMEDIATE_KEY_MAC_ALIAS);
+    }
+
+    /**
+     * Wipes the root key salt and the password hashes without MAC key material.
+     */
+    private void wipeRootIntermediateKeyAndPasswordDataWithoutMAC()  {
+        cryptoIOHelper.deleteFromSharedPref(KEY_DATA_ALIAS, AES_MASTERKEY_WITHOUT_MAC_SALT_ALIAS);
+        cryptoIOHelper.deleteFromSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC);
+        cryptoIOHelper.deleteFromSharedPref(PASSWORD_ALIAS, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
+        cryptoIOHelper.deleteFromSharedPref(IMEDIATE_KEY_DATA, AES_INTERMEDIATEKEY_WITHOUT_MAC_ALIAS);
     }
 
     /**
@@ -667,7 +809,8 @@ public class SecureAndroid {
         AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(aesCrypto.generateRandomAESKey().getEncoded(),
                aesMasterKeyAndSalt.getSecretKey());
         // Generate the intermediate mac key and encrypt it with the master key
-        AESCrypto.CipherIV intermediateMACCipherIv = aesCrypto.encryptAES(macCrypto.generateRandomMACKey().getEncoded(), aesMasterKeyAndSalt.getSecretKey());
+        AESCrypto.CipherIV intermediateMACCipherIv = aesCrypto.encryptAES(macCrypto.generateRandomMACKey().getEncoded(),
+                aesMasterKeyAndSalt.getSecretKey());
         // Generate MAC for encrypted aes-intermediate key and encrypted mac-intermediate key
         byte[] aesIntermediateMAC = macCrypto.generateMAC(intermediateAESCipherIV.getCipher(), macMasterKeyAndSalt.getSecretKey());
         byte[] macIntermediateMAC = macCrypto.generateMAC(intermediateMACCipherIv.getCipher(), macMasterKeyAndSalt.getSecretKey());
@@ -685,10 +828,10 @@ public class SecureAndroid {
         if (macCrypto.checkIntegrity(intermediateAESCipherIV.getCipher(), aesIntermediateMAC, macMasterKeyAndSalt.getSecretKey()) &&
                macCrypto.checkIntegrity(intermediateMACCipherIv.getCipher(), macIntermediateMAC, macMasterKeyAndSalt.getSecretKey())) {
             // Get the raw key material
-            final byte[] rawAES = aesCrypto.decryptAES(intermediateAESCipherIV.getCipher(), intermediateAESCipherIV.getIv(), aesMasterKeyAndSalt.getSecretKey());
-            final byte[] rawMAC = aesCrypto.decryptAES(intermediateMACCipherIv.getCipher(), intermediateMACCipherIv.getIv(), aesMasterKeyAndSalt.getSecretKey());
+            final byte[] aes = aesCrypto.decryptAES(intermediateAESCipherIV.getCipher(), intermediateAESCipherIV.getIv(), aesMasterKeyAndSalt.getSecretKey());
+            final byte[] mac = aesCrypto.decryptAES(intermediateMACCipherIv.getCipher(), intermediateMACCipherIv.getIv(), aesMasterKeyAndSalt.getSecretKey());
             // Generate the secret-key objects and return them
-            return new SecretKeys(new SecretKeySpec(rawAES, 0, rawAES.length, AES), new SecretKeySpec(rawMAC, 0, rawMAC.length, MAC));
+            return new SecretKeys(new SecretKeySpec(aes, 0, aes.length, AES), new SecretKeySpec(mac, 0, mac.length, MAC));
         } else {
             // throw exception if not
             throw new CryptoIOHelper.IntegrityCheckFailedException(INTEGRITY_CHECK_FAILED);
@@ -743,7 +886,7 @@ public class SecureAndroid {
                     getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
             // Check whether the hash of the given password+salt equals the hash of the store password
             if (passwordCrypto.checkPassword(password, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
-                // Load the salt values for generating the master aes and mac key
+                // Load the salt values for generating the master aes- and mac master-keys
                 final byte[] aesSalt = cryptoIOHelper.loadFromSharedPrefBase64(KEY_DATA_ALIAS, AES_MASTERKEY_SALT_ALIAS);
                 final byte[] macSalt = cryptoIOHelper.loadFromSharedPrefBase64(KEY_DATA_ALIAS, MAC_MASTER_KEY_SALT_ALIAS);
                 // Load MACs of aes and mac intermediate keys
@@ -984,9 +1127,9 @@ public class SecureAndroid {
          * @param mac   The mac key
          * @param aes   The aes key
          */
-        public SecretKeys(SecretKey mac, SecretKey aes) {
-            this.mac = mac;
+        public SecretKeys(SecretKey aes, SecretKey mac) {
             this.aes = aes;
+            this.mac = mac;
         }
         // Getter
         public SecretKey getMACKey() { return mac; }
@@ -1000,5 +1143,24 @@ public class SecureAndroid {
         synchronized (PRNGFixes.class) {
             PRNGFixes.apply();
         }
+    }
+
+    /**
+     * Method that checks to byte arrays for equality without being vulnerable to a timing attack.
+     *
+     * @param a Byte array a.
+     * @param b Byte array b.
+     * @return  True if a == b, false otherwise.
+     */
+    public static boolean isEqual(byte[] a, byte[] b) {
+        if (a.length != b.length) {
+            return false;
+        }
+
+        int result = 0;
+        for (int i = 0; i < a.length; i++) {
+            result |= a[i] ^ b[i];
+        }
+        return result == 0;
     }
 }
