@@ -1,14 +1,12 @@
 package my.secureandroid;
 
 import android.content.Context;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -27,7 +25,7 @@ public class AESCrypto extends CryptoIOHelper {
     // Message if no suitable algorithm available
     private static final String NO_ALG_MSG = "No algorithm available on this platform";
     // Default Instances and Modes for Encryption/Decryption
-    private String AES_MODE;
+    private String AES_MODE = "AES/CBC/PKCS5Padding";
     private String PBE_ALGORITHM;
     private static final String AES_INSTANCE = "AES";
     // Key lengths, iterations, salt lengths
@@ -59,8 +57,6 @@ public class AESCrypto extends CryptoIOHelper {
         // Apply Googles fix for the pseudo random number generator for API-Levels 16-18
         prng = new AtomicBoolean(false);
         fixPrng();
-        // Set AES-Mode
-        AES_MODE = "AES/CBC/PKCS5Padding";
         // set the iteration count
         PBE_ITERATIONS = iterations;
     }

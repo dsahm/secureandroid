@@ -1,15 +1,12 @@
 package my.secureandroid;
 
 import android.content.Context;
-import android.util.Log;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.spec.KeySpec;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
@@ -101,7 +98,7 @@ public class PasswordCrypto extends CryptoIOHelper {
      * @throws GeneralSecurityException
      */
     protected boolean checkPassword(char[] password, byte[] hash, byte[] salt) throws GeneralSecurityException {
-        return Arrays.equals(hashPasswordWithSalt(password, salt), hash);
+        return MessageDigest.isEqual(hashPasswordWithSalt(password, salt), hash);
     }
 
     /**

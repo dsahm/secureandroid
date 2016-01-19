@@ -1,14 +1,11 @@
 package my.secureandroid;
 
 import android.content.Context;
-
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.LinkedList;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -74,7 +71,7 @@ public class SecureAndroid {
         cryptoIOHelper = new CryptoIOHelper(context);
         // Prepare iterations
         int iterations;
-        // See if performance-test already happened and load iterations
+        // Check if performance-test already happened and load iterations
         try {
             iterations = Integer.parseInt(new String(cryptoIOHelper.loadFromSharedPrefBase64(ITERATION_COUNT_ALIAS, ITERATION_COUNT_ALIAS)));
         } catch (CryptoIOHelper.DataNotAvailableException e) {
@@ -91,7 +88,7 @@ public class SecureAndroid {
         // Check and define the MAC length according to the availability of SHA256/1 on the platform
         checkMACLength();
         MACPLUSIV_LENGTH_BYTE = IV_LENGTH_BYTE+MAC_LENGTH_BYTE;
-        // Apply PRNGFIX, only a security measure
+        // Apply PRNGFIX
         fixPrng();
     }
 
@@ -290,73 +287,7 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     public boolean changePassword(char [] oldPassword, char [] newPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
-        boolean dataNotAvailable = false;
-        try {
-            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
-            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
-                final SecretKeys oldKeys = getKeyData(oldPassword);
-                wipeRootIntermediateKeyAndPasswordData();
-                // Hash the new password with salt and get the hashed password and the salt
-                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(newPassword);
-                // Generate master AES key
-                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(newPassword);
-                // Generate master MAC key
-                final AESCrypto.SaltAndKey macMasterKeyAndSalt = macCrypto.generateRandomMACKeyFromPasswordGetSalt(newPassword);
-                // Store the salt values used to generate the aes- and mac-masterkeys
-                storeRootSaltData(aesMasterKeyAndSalt.getSalt(), macMasterKeyAndSalt.getSalt());
-                // encrypt the intermediate aes key with the new master key
-                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKeys.getAESKey().getEncoded(),
-                        aesMasterKeyAndSalt.getSecretKey());
-                // encrypt the intermediate mac key with the new master key
-                AESCrypto.CipherIV intermediateMACCipherIv = aesCrypto.encryptAES(oldKeys.getMACKey().getEncoded(),
-                        aesMasterKeyAndSalt.getSecretKey());
-                // Generate MAC for encrypted aes-intermediate key and encrypted mac-intermediate key
-                byte[] aesIntermediateMAC = macCrypto.generateMAC(intermediateAESCipherIV.getCipher(), macMasterKeyAndSalt.getSecretKey());
-                byte[] macIntermediateMAC = macCrypto.generateMAC(intermediateMACCipherIv.getCipher(), macMasterKeyAndSalt.getSecretKey());
-                // Store MACs for encrypted aes- and mac-intermediate keys
-                storeIntermediateKeysMACs(aesIntermediateMAC, macIntermediateMAC);
-                // Store the hashed password+salt, the intermediate key+iv and the mac-key+iv
-                storePasswordAndIntermediateKeyCipherIV(newHashedPasswordAndSalt, intermediateAESCipherIV, intermediateMACCipherIv);
-                // Load the stored keys to check if save was successful
-                final SecretKeys newKeys = getKeyData(newPassword);
-                if (!(isEqual(newKeys.getAESKey().getEncoded(), oldKeys.getAESKey().getEncoded()) &&
-                        isEqual(newKeys.getMACKey().getEncoded(), oldKeys.getMACKey().getEncoded()))) {
-                    return false;
-                }
-            } else {
-                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
-            }
-        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
-            dataNotAvailable = true;
-        }
-        try {
-            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
-            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
-                final SecretKey oldKey = getKeyDataWithoutMAC(oldPassword);
-                wipeRootIntermediateKeyAndPasswordDataWithoutMAC();
-                // Hash the new password with salt and get the hashed password and the salt
-                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(newPassword);
-                // Generate the new master AES key
-                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(newPassword);
-                // Store the salt values used to generate the aes-key
-                storeRootSaltDataWithoutMAC(aesMasterKeyAndSalt.getSalt());
-                // encrypt the intermediate aes key with the new master key
-                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKey.getEncoded(), aesMasterKeyAndSalt.getSecretKey());
-                // Store the hashed password+salt and the intermediate key+iv
-                storePasswordAndIntermediateKeyCipherIVWithoutMAC(newHashedPasswordAndSalt, intermediateAESCipherIV);
-                // Load the stored keys to check if save was successful
-                final SecretKey newKey = getKeyDataWithoutMAC(newPassword);
-                return (isEqual(oldKey.getEncoded(), newKey.getEncoded()));
-            } else {
-                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
-            }
-        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
-            if (dataNotAvailable) {
-                throw new CryptoIOHelper.DataNotAvailableException(NO_PASSWORD);
-            } else {
-                return true;
-            }
-        }
+        return changePasswordPrivate(oldPassword, newPassword);
     }
 
     /**
@@ -369,11 +300,38 @@ public class SecureAndroid {
      * @throws CryptoIOHelper.IntegrityCheckFailedException
      */
     public boolean changeFromAutoPassword(char [] newPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
+        return changePasswordPrivate(getAutoPassword().toCharArray(), newPassword);
+    }
+
+    /**
+     * Method to change to the auto-generated password.
+     *
+     * @param oldPassword The old password.
+     * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     */
+    public boolean changeToAutoPassword(char [] oldPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
+        return changePasswordPrivate(oldPassword, getAutoPassword().toCharArray());
+    }
+
+    /**
+     * Private method to change the password.
+     *
+     * @param oldPassword The old password.
+     * @param newPassword The new password.
+     * @throws CryptoIOHelper.WrongPasswordException
+     * @throws CryptoIOHelper.DataNotAvailableException
+     * @throws GeneralSecurityException
+     * @throws CryptoIOHelper.IntegrityCheckFailedException
+     */
+    private boolean changePasswordPrivate(char [] oldPassword, char [] newPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
         boolean dataNotAvailable = false;
         try {
             final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
-            if (passwordCrypto.checkPassword(getAutoPassword().toCharArray(), oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
-                final SecretKeys oldKeys = getKeyData(getAutoPassword().toCharArray());
+            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
+                final SecretKeys oldKeys = getKeyData(oldPassword);
                 wipeRootIntermediateKeyAndPasswordData();
                 // Hash the new password with salt and get the hashed password and the salt
                 final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(newPassword);
@@ -410,8 +368,8 @@ public class SecureAndroid {
         }
         try {
             final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
-            if (passwordCrypto.checkPassword(getAutoPassword().toCharArray(), oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
-                final SecretKey oldKey = getKeyDataWithoutMAC(getAutoPassword().toCharArray());
+            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
+                final SecretKey oldKey = getKeyDataWithoutMAC(oldPassword);
                 wipeRootIntermediateKeyAndPasswordDataWithoutMAC();
                 // Hash the new password with salt and get the hashed password and the salt
                 final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(newPassword);
@@ -425,85 +383,6 @@ public class SecureAndroid {
                 storePasswordAndIntermediateKeyCipherIVWithoutMAC(newHashedPasswordAndSalt, intermediateAESCipherIV);
                 // Load the stored keys to check if save was successful
                 final SecretKey newKey = getKeyDataWithoutMAC(newPassword);
-                return (isEqual(oldKey.getEncoded(), newKey.getEncoded()));
-            } else {
-                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
-            }
-        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
-            if (dataNotAvailable) {
-                throw new CryptoIOHelper.DataNotAvailableException(NO_PASSWORD);
-            } else {
-                return true;
-            }
-        }
-    }
-
-    /**
-     * Method to change to the auto-generated password.
-     *
-     * @param oldPassword The old password.
-     * @throws CryptoIOHelper.WrongPasswordException
-     * @throws CryptoIOHelper.DataNotAvailableException
-     * @throws GeneralSecurityException
-     * @throws CryptoIOHelper.IntegrityCheckFailedException
-     */
-    public boolean changeToAutoPassword(char [] oldPassword) throws CryptoIOHelper.WrongPasswordException, CryptoIOHelper.IntegrityCheckFailedException, GeneralSecurityException, CryptoIOHelper.DataNotAvailableException {
-        boolean dataNotAvailable = false;
-        try {
-            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS, PASSWORD_SALT_ALIAS);
-            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
-                final SecretKeys oldKeys = getKeyData(oldPassword);
-                wipeRootIntermediateKeyAndPasswordData();
-                // Hash the new password with salt and get the hashed password and the salt
-                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(getAutoPassword().toCharArray());
-                // Generate master AES key
-                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(getAutoPassword().toCharArray());
-                // Generate master MAC key
-                final AESCrypto.SaltAndKey macMasterKeyAndSalt = macCrypto.generateRandomMACKeyFromPasswordGetSalt(getAutoPassword().toCharArray());
-                // Store the salt values used to generate the aes- and mac-masterkeys
-                storeRootSaltData(aesMasterKeyAndSalt.getSalt(), macMasterKeyAndSalt.getSalt());
-                // encrypt the intermediate aes key with the new master key
-                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKeys.getAESKey().getEncoded(),
-                        aesMasterKeyAndSalt.getSecretKey());
-                // encrypt the intermediate mac key with the new master key
-                AESCrypto.CipherIV intermediateMACCipherIv = aesCrypto.encryptAES(oldKeys.getMACKey().getEncoded(),
-                        aesMasterKeyAndSalt.getSecretKey());
-                // Generate MAC for encrypted aes-intermediate key and encrypted mac-intermediate key
-                byte[] aesIntermediateMAC = macCrypto.generateMAC(intermediateAESCipherIV.getCipher(), macMasterKeyAndSalt.getSecretKey());
-                byte[] macIntermediateMAC = macCrypto.generateMAC(intermediateMACCipherIv.getCipher(), macMasterKeyAndSalt.getSecretKey());
-                // Store MACs for encrypted aes- and mac-intermediate keys
-                storeIntermediateKeysMACs(aesIntermediateMAC, macIntermediateMAC);
-                // Store the hashed password+salt, the intermediate key+iv and the mac-key+iv
-                storePasswordAndIntermediateKeyCipherIV(newHashedPasswordAndSalt, intermediateAESCipherIV, intermediateMACCipherIv);
-                // Load the stored keys to check if save was successful
-                final SecretKeys newKeys = getKeyData(getAutoPassword().toCharArray());
-                if (!(isEqual(newKeys.getAESKey().getEncoded(), oldKeys.getAESKey().getEncoded()) &&
-                        isEqual(newKeys.getMACKey().getEncoded(), oldKeys.getMACKey().getEncoded()))) {
-                    return false;
-                }
-            } else {
-                throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
-            }
-        } catch (CryptoIOHelper.DataNotAvailableException|CryptoIOHelper.NoKeyMaterialException e) {
-            dataNotAvailable = true;
-        }
-        try {
-            final PasswordCrypto.HashedPasswordAndSalt oldHashedPasswordAndSalt = passwordCrypto.getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
-            if (passwordCrypto.checkPassword(oldPassword, oldHashedPasswordAndSalt.getHashedPassword(), oldHashedPasswordAndSalt.getSalt())) {
-                final SecretKey oldKey = getKeyDataWithoutMAC(oldPassword);
-                wipeRootIntermediateKeyAndPasswordDataWithoutMAC();
-                // Hash the new password with salt and get the hashed password and the salt
-                final PasswordCrypto.HashedPasswordAndSalt newHashedPasswordAndSalt = passwordCrypto.hashPassword(getAutoPassword().toCharArray());
-                // Generate the new master AES key
-                final AESCrypto.SaltAndKey aesMasterKeyAndSalt = aesCrypto.generateRandomAESKeyFromPasswordGetSalt(getAutoPassword().toCharArray());
-                // Store the salt values used to generate the aes-key
-                storeRootSaltDataWithoutMAC(aesMasterKeyAndSalt.getSalt());
-                // encrypt the intermediate aes key with the new master key
-                AESCrypto.CipherIV intermediateAESCipherIV = aesCrypto.encryptAES(oldKey.getEncoded(), aesMasterKeyAndSalt.getSecretKey());
-                // Store the hashed password+salt and the intermediate key+iv
-                storePasswordAndIntermediateKeyCipherIVWithoutMAC(newHashedPasswordAndSalt, intermediateAESCipherIV);
-                // Load the stored keys to check if save was successful
-                final SecretKey newKey = getKeyDataWithoutMAC(getAutoPassword().toCharArray());
                 return (isEqual(oldKey.getEncoded(), newKey.getEncoded()));
             } else {
                 throw new CryptoIOHelper.WrongPasswordException(WRONG_PASSWORD);
@@ -1146,13 +1025,13 @@ public class SecureAndroid {
     }
 
     /**
-     * Method that checks to byte arrays for equality without being vulnerable to a timing attack.
+     * Method that checks two byte arrays for equality without being vulnerable to a timing attack.
      *
      * @param a Byte array a.
      * @param b Byte array b.
      * @return  True if a == b, false otherwise.
      */
-    public static boolean isEqual(byte[] a, byte[] b) {
+    private static boolean isEqual(byte[] a, byte[] b) {
         if (a.length != b.length) {
             return false;
         }
