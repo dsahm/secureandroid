@@ -66,7 +66,7 @@ public class PasswordCrypto extends CryptoIOHelper {
         final KeySpec keySpec = new PBEKeySpec(password, salt, PBE_ITERATIONS, KEY_LENGTH);
         // Instantiate key factory with the desired PBE-Algorithm
         final SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(PBE_ALGORITHM);
-        // Generate hash und return the hash with the salt that was uses to generate the hash
+        // Generate hash und return the hash with the salt that was used to generate the hash
         return new HashedPasswordAndSalt(keyFactory.generateSecret(keySpec).getEncoded(), salt);
     }
 

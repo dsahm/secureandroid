@@ -815,7 +815,7 @@ public class SecureAndroid {
         try {
             final PasswordCrypto.HashedPasswordAndSalt hashedPasswordAndSalt = passwordCrypto.
                     getHashedPasswordAndSaltSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC, PASSWORD_SALT_ALIAS_WITHOUT_MAC);
-            // Check whether the hash of the given password+salt equals the hash of the store password
+            // Check whether the hash of the given password+salt equals the hash of the stored password
             if (passwordCrypto.checkPassword(password, hashedPasswordAndSalt.getHashedPassword(), hashedPasswordAndSalt.getSalt())) {
                 // Load the salt value for generating the master aes key
                 try {
