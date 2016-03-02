@@ -421,7 +421,7 @@ public class SecureAndroid {
      * Wipes the intermediate key and thus destroys all formerly encrypted data in the sense
      * of it being irrecoverable.
      */
-    public void wipeKey()  {
+    public void wipeKey() {
         cryptoIOHelper.deleteSharedPref(IMEDIATE_KEY_DATA);
         cryptoIOHelper.deleteSharedPref(KEY_DATA_ALIAS);
         cryptoIOHelper.deleteSharedPref(PASSWORD_ALIAS);
@@ -430,7 +430,7 @@ public class SecureAndroid {
     /**
      * Wipes the root key salts and the password hashes.
      */
-    private void wipeRootIntermediateKeyAndPasswordData()  {
+    private void wipeRootIntermediateKeyAndPasswordData() {
         cryptoIOHelper.deleteFromSharedPref(KEY_DATA_ALIAS, AES_MASTERKEY_SALT_ALIAS);
         cryptoIOHelper.deleteFromSharedPref(KEY_DATA_ALIAS, MAC_MASTER_KEY_SALT_ALIAS);
         cryptoIOHelper.deleteFromSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS);
@@ -444,7 +444,7 @@ public class SecureAndroid {
     /**
      * Wipes the root key salt and the password hashes without MAC key material.
      */
-    private void wipeRootIntermediateKeyAndPasswordDataWithoutMAC()  {
+    private void wipeRootIntermediateKeyAndPasswordDataWithoutMAC() {
         cryptoIOHelper.deleteFromSharedPref(KEY_DATA_ALIAS, AES_MASTERKEY_WITHOUT_MAC_SALT_ALIAS);
         cryptoIOHelper.deleteFromSharedPref(PASSWORD_ALIAS, PASSWORD_HASH_ALIAS_WITHOUT_MAC);
         cryptoIOHelper.deleteFromSharedPref(PASSWORD_ALIAS, PASSWORD_SALT_ALIAS_WITHOUT_MAC);

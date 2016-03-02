@@ -4,7 +4,7 @@ A small library for encrypting and storing data securely on Android devices.
 This is version 1.0.
 
 For usage information and tutorial visit http://dsahm.github.io/secureandroid.
-For an in-depth explanation of the cryptographic mechanisms used in SecureAndroid, download the BA Sahm pdf file. This is the thesis behind the project. 
+For an in-depth explanation of the cryptographic mechanisms used in SecureAndroid, download the BA_Sahm pdf file. This is the thesis behind the project. 
 
 Copyright (c) 2015 Daniel Sahm
 

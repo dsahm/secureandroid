@@ -62,7 +62,7 @@ public class MACCrypto extends CryptoIOHelper {
      * @return              The generated MAC-Key.
      * @throws              NoSuchAlgorithmException
      */
-    protected SecretKey generateRandomMACKey() throws NoSuchAlgorithmException{
+    protected SecretKey generateRandomMACKey() throws NoSuchAlgorithmException {
         fixPrng();
         KeyGenerator keyGenerator;
         keyGenerator = KeyGenerator.getInstance(MAC_ALGORITHM);
