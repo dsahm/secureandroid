@@ -1,6 +1,8 @@
 # SecureAndroid
 A small library for encrypting and storing data securely on Android devices.
 
+Note: A version with better performance can be found here: https://github.com/dsahm/secureandroid_performance.
+
 This is version 1.0.
 
 For usage information and tutorial visit http://dsahm.github.io/secureandroid.
